@@ -10,10 +10,12 @@ local AZPInterruptHelperFrame, AZPInterruptHelperOptionPanel = nil, nil
 
 local AZPInterruptOrder, AZPInterruptOrderEditBoxes, AZPinterruptOrderCooldownBars = {}, {}, {}
 
+AZPinterruptOrderCooldowns = {}
+
 local InterruptButton = nil
 
 local blinkingBoolean = false
-local blinkingTicker = nil
+local blinkingTicker, cooldownTicker = nil, nil
 
 function AZPInterruptHelper:VersionControl()
     return AZPInterruptHelperVersion
@@ -85,6 +87,8 @@ function AZPInterruptHelper:OnLoad()
     AZPInterruptHelperFrame:SetScript("OnDragStop", function() AZPInterruptHelperFrame:StopMovingOrSizing() AZPInterruptHelper:SaveLocation() end)
     AZPInterruptHelperFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     AZPInterruptHelperFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    AZPInterruptHelperFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
+    AZPInterruptHelperFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
     AZPInterruptHelperFrame:SetScript("OnEvent", function(...) AZPInterruptHelper:OnEvent(...) end)
     AZPInterruptHelperFrame:SetSize(200, 200)
     AZPInterruptHelperFrame:SetBackdrop({
@@ -170,6 +174,23 @@ function AZPInterruptHelper:ChangeFrameHeight()
     --AZPInterruptHelperFrame.header:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
 end
 
+function AZPInterruptHelper:TickCoolDowns()
+    for i = 1, #AZPinterruptOrderCooldownBars do
+        if AZPinterruptOrderCooldowns[i] ~= nil then
+            if AZPinterruptOrderCooldowns[i] <= 0 then
+                AZPinterruptOrderCooldowns[i] = nil
+                AZPinterruptOrderCooldownBars[i].cooldown:SetText("-")
+                AZPinterruptOrderCooldownBars[i]:SetMinMaxValues(0, 100)
+                AZPinterruptOrderCooldownBars[i]:SetValue(100)
+            else
+                AZPinterruptOrderCooldowns[i] = AZPinterruptOrderCooldowns[i] - 1
+                AZPinterruptOrderCooldownBars[i].cooldown:SetText(AZPinterruptOrderCooldowns[i])
+                AZPinterruptOrderCooldownBars[i]:SetValue(AZPinterruptOrderCooldowns[i])
+            end
+        end
+    end
+end
+
 function AZPInterruptHelper:SaveInterrupts()
     local InterruptFrameHeader = "Interrupt Order:\n"
     for i = 1, 10 do
@@ -178,7 +199,7 @@ function AZPInterruptHelper:SaveInterrupts()
             -- InterruptFrameHeader = InterruptFrameHeader .. AZPInterruptOrder[i] .. "\n"
             AZPinterruptOrderCooldownBars[i].name:SetText(AZPInterruptOrder[i])
             AZPinterruptOrderCooldownBars[i]:Show()
-            
+
             -- refill bars based on CD.
             -- change color of bars based on classColor.
         end
@@ -216,19 +237,25 @@ function AZPInterruptHelper:StructureInterrupts(interruptedName, interruptSpellI
     end
 
     local spellCooldown = AZPInterruptHelper:GetSpellCooldown(interruptSpellID)
+    AZPinterruptOrderCooldowns[interuptedIndex] = spellCooldown
     AZPinterruptOrderCooldownBars[interuptedIndex]:SetMinMaxValues(0, spellCooldown)
     AZPinterruptOrderCooldownBars[interuptedIndex].cooldown:SetText(spellCooldown)
 
     local temp = AZPInterruptOrder[interuptedIndex]
     local temp2 = AZPinterruptOrderCooldownBars[interuptedIndex]
+    local temp3 = AZPinterruptOrderCooldowns[interuptedIndex]
+
     for i = interuptedIndex, #AZPInterruptOrder - 1 do
         AZPInterruptOrder[i] = AZPInterruptOrder[i+1]
         AZPinterruptOrderCooldownBars[i] = AZPinterruptOrderCooldownBars[i+1]
+        AZPinterruptOrderCooldowns[i] = AZPinterruptOrderCooldowns[i+1]
         AZPinterruptOrderCooldownBars[i]:SetPoint("TOP", 0, -20 * i - 25)
     end
     AZPInterruptOrder[#AZPInterruptOrder] = temp
     AZPinterruptOrderCooldownBars[#AZPInterruptOrder] = temp2
+    AZPinterruptOrderCooldowns[#AZPInterruptOrder] = temp3
     AZPinterruptOrderCooldownBars[#AZPInterruptOrder]:SetPoint("TOP", 0, -20 * #AZPInterruptOrder - 25)
+
     AZPInterruptHelper:SaveInterrupts()
 end
 
@@ -253,6 +280,10 @@ function AZPInterruptHelper:OnEvent(self, event, ...)
         InterruptButton:SetAttribute("type", "spell")
         AZPInterruptHelper:PickInterrupt()
         InterruptButton:SetAttribute("target", "target")
+    elseif event == "PLAYER_ENTER_COMBAT" then
+        cooldownTicker = C_Timer.NewTicker(1, function() AZPInterruptHelper:TickCoolDowns() end, 1000)
+    elseif event == "PLAYER_LEAVE_COMBAT" then
+        cooldownTicker:Cancel()
     end
 end
 
