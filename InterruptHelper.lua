@@ -1,0 +1,255 @@
+local GlobalAddonName, AZPInterruptHelper = ...
+
+local AZPInterruptHelperVersion = 1
+local dash = " - "
+local name = "Interrupt Helper"
+local nameFull = ("AzerPUG's " .. name)
+local promo = (nameFull .. dash ..  AZPInterruptHelperVersion)
+
+local AZPInterruptHelperFrame, AZPInterruptHelperOptionPanel = nil, nil
+
+local AZPInterruptOrder, AZPInterruptOrderEditBoxes, AZPinterruptOrderCooldownBars = {}, {}, {}
+
+local InterruptButton = nil
+
+local blinkingBoolean = false
+local blinkingTicker = nil
+
+function AZPInterruptHelper:VersionControl()
+    return AZPInterruptHelperVersion
+end
+
+function AZPInterruptHelper:OnLoad()
+    AZPInterruptHelperOptionPanel = CreateFrame("FRAME", nil)
+    AZPInterruptHelperOptionPanel.name = "|cFF00FFFFAzerPUG's Interrupt Helper|r"
+    InterfaceOptions_AddCategory(AZPInterruptHelperOptionPanel)
+
+    AZPInterruptHelperOptionPanel.header = AZPInterruptHelperOptionPanel:CreateFontString("AZPInterruptHelperOptionPanel", "ARTWORK", "GameFontNormalHuge")
+    AZPInterruptHelperOptionPanel.header:SetPoint("TOP", 0, -10)
+    AZPInterruptHelperOptionPanel.header:SetText("|cFF00FFFFAzerPUG ToolTips Options!|r")
+
+    AZPInterruptHelperOptionPanel.footer = AZPInterruptHelperOptionPanel:CreateFontString("AZPInterruptHelperOptionPanel", "ARTWORK", "GameFontNormalLarge")
+    AZPInterruptHelperOptionPanel.footer:SetPoint("TOP", 0, -400)
+    AZPInterruptHelperOptionPanel.footer:SetText(
+        "|cFF00FFFFAzerPUG Links:\n" ..
+        "Website: www.azerpug.com\n" ..
+        "Discord: www.azerpug.com/discord\n" ..
+        "Twitch: www.twitch.tv/azerpug\n|r"
+    )
+
+    for i = 1, 10 do
+        local interruptersFrame = CreateFrame("Frame", nil, AZPInterruptHelperOptionPanel)
+        interruptersFrame:SetSize(200, 25)
+        interruptersFrame:SetPoint("LEFT", 75, -30*i + 250)
+        interruptersFrame.editbox = CreateFrame("EditBox", nil, interruptersFrame, "InputBoxTemplate")
+        interruptersFrame.editbox:SetSize(100, 25)
+        interruptersFrame.editbox:SetPoint("LEFT", 50, 0)
+        interruptersFrame.editbox:SetAutoFocus(false)
+        interruptersFrame.text = interruptersFrame:CreateFontString("interruptersFrame", "ARTWORK", "GameFontNormalLarge")
+        interruptersFrame.text:SetSize(100, 25)
+        interruptersFrame.text:SetPoint("LEFT", -50, 0)
+        interruptersFrame.text:SetText("Interrupter " .. i .. ":")
+
+        if i == 1 then
+            interruptersFrame.editbox:SetText("Wiredruid")
+        elseif i == 2 then
+            interruptersFrame.editbox:SetText("Tex")
+        end
+
+        AZPInterruptOrderEditBoxes[i] = interruptersFrame
+        interruptersFrame.editbox:SetScript("OnEditFocusLost",
+        function()
+            for j = 1, 10 do
+                if (AZPInterruptOrderEditBoxes[j].editbox:GetText() ~= nil and AZPInterruptOrderEditBoxes[j].editbox:GetText() ~= "") then
+                    AZPInterruptOrder[j] = AZPInterruptOrderEditBoxes[j].editbox:GetText()
+                else
+                    AZPInterruptOrder[j] = nil
+                end
+            end
+            AZPInterruptHelper:SaveInterrupts()
+            AZPInterruptHelper:ChangeFrameHeight()
+        end)
+    end
+
+    AZPInterruptHelperOptionPanel:Hide()
+
+    if AZPInterruptHelperLocation == nil then
+        AZPInterruptHelperLocation = {"CENTER", 200, -200}
+    end
+
+    AZPInterruptHelperFrame = CreateFrame("FRAME", nil, UIParent, "BackdropTemplate")
+    AZPInterruptHelperFrame:EnableMouse(true)
+    AZPInterruptHelperFrame:SetMovable(true)
+    AZPInterruptHelperFrame:RegisterForDrag("LeftButton")
+    AZPInterruptHelperFrame:SetScript("OnDragStart", AZPInterruptHelperFrame.StartMoving)
+    AZPInterruptHelperFrame:SetScript("OnDragStop", function() AZPInterruptHelperFrame:StopMovingOrSizing() AZPInterruptHelper:SaveLocation() end)
+    AZPInterruptHelperFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    AZPInterruptHelperFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    AZPInterruptHelperFrame:SetScript("OnEvent", function(...) AZPInterruptHelper:OnEvent(...) end)
+    AZPInterruptHelperFrame:SetSize(200, 200)
+    AZPInterruptHelperFrame:SetBackdrop({
+        bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+        edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+        edgeSize = 24,
+        insets = { left = 5, right = 5, top = 5, bottom = 5 },
+    })
+    AZPInterruptHelperFrame:SetBackdropColor(0.5, 0.5, 0.5, 0.75)
+    AZPInterruptHelperFrame:SetBackdropBorderColor(1, 1, 1, 1)
+    AZPInterruptHelperFrame.text = AZPInterruptHelperFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    AZPInterruptHelperFrame.text:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
+    AZPInterruptHelperFrame.text:SetPoint("TOP", 0, -5)
+    AZPInterruptHelperFrame.text:SetText("Nothing!")
+
+    InterruptButton = CreateFrame("Button", nil, AZPInterruptHelperFrame, "SecureActionButtonTemplate")
+    InterruptButton:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
+    InterruptButton:SetPoint("Center", 0, 0)
+    InterruptButton:EnableMouse(true)
+
+    for i = 1, 10 do
+        AZPinterruptOrderCooldownBars[i] = CreateFrame("StatusBar", nil, AZPInterruptHelperFrame)
+        AZPinterruptOrderCooldownBars[i]:SetSize(AZPInterruptHelperFrame:GetWidth() - 20, 18)
+        AZPinterruptOrderCooldownBars[i]:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
+        AZPinterruptOrderCooldownBars[i]:SetPoint("TOP", 0, -20 * i - 25)
+        AZPinterruptOrderCooldownBars[i]:SetMinMaxValues(0, 100)
+        AZPinterruptOrderCooldownBars[i]:SetValue(100)
+        AZPinterruptOrderCooldownBars[i].name = AZPinterruptOrderCooldownBars[i]:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+        AZPinterruptOrderCooldownBars[i].name:SetSize(AZPinterruptOrderCooldownBars[i]:GetWidth() - 25, 16)
+        AZPinterruptOrderCooldownBars[i].name:SetPoint("CENTER", 0, -1)
+        AZPinterruptOrderCooldownBars[i].name:SetText("charName")
+        AZPinterruptOrderCooldownBars[i].bg = AZPinterruptOrderCooldownBars[i]:CreateTexture(nil, "BACKGROUND")
+        AZPinterruptOrderCooldownBars[i].bg:SetTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
+        AZPinterruptOrderCooldownBars[i].bg:SetAllPoints(true)
+        AZPinterruptOrderCooldownBars[i].bg:SetVertexColor(1, 0, 0)
+        AZPinterruptOrderCooldownBars[i].cooldown = AZPinterruptOrderCooldownBars[i]:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+        AZPinterruptOrderCooldownBars[i].cooldown:SetSize(25, 16)
+        AZPinterruptOrderCooldownBars[i].cooldown:SetPoint("RIGHT", -5, 0)
+        AZPinterruptOrderCooldownBars[i].cooldown:SetText("-")
+        AZPinterruptOrderCooldownBars[i]:Hide()
+    end
+
+    local CuntButton = CreateFrame("Button", nil, AZPInterruptHelperFrame, "UIPanelButtonTemplate")
+    CuntButton:SetSize(25, 25)
+    CuntButton:SetPoint("TOPLEFT", AZPInterruptHelperFrame, "TOPLEFT", -22, 2)
+    CuntButton:SetScript("OnClick", function() AZPInterruptHelper:StructureInterrupts(AZPInterruptOrder[1], nil) end)
+    CuntButton:SetText("X")
+
+    AZPInterruptHelper:ChangeFrameHeight()
+end
+
+function AZPInterruptHelper:PickInterrupt()
+    local className = select(2, UnitClass("player"))        -- Find out if select is better then using wildcards.
+    local currentSpec = GetSpecialization()
+    local currentSpecName = select(2, GetSpecializationInfo(currentSpec))
+    for spellID, interruptInfo in pairs(AZPInterruptHelper.interruptSpells) do
+        if interruptInfo[2] == className then
+            for i = 1, #interruptInfo[3] do
+                if interruptInfo[3][i] == currentSpecName then
+                    local spellName = GetSpellInfo(spellID)
+                    InterruptButton:SetAttribute("spell", spellName)
+                end
+            end
+        end
+    end
+end
+
+function AZPInterruptHelper:GetSpellCooldown(interruptSpellID)
+    return AZPInterruptHelper.interruptSpells[interruptSpellID][4]
+end
+
+function AZPInterruptHelper:SaveLocation()
+    local temp = {}
+    temp[1], temp[2], temp[3], temp[4], temp[5] = AZPInterruptHelperFrame:GetPoint()
+    AZPInterruptHelperLocation = temp
+end
+
+function AZPInterruptHelper:ChangeFrameHeight()
+    AZPInterruptHelperFrame:SetHeight(#AZPInterruptOrder * 25 + 50)
+    --AZPInterruptHelperFrame:SetHeight(AZPInterruptHelperFrame.text:GetStringHeight() + 40)
+    --AZPInterruptHelperFrame.text:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
+end
+
+function AZPInterruptHelper:SaveInterrupts()
+    local InterruptFrameHeader = "Interrupt Order:\n"
+    for i = 1, 10 do
+        AZPinterruptOrderCooldownBars[i]:Hide()
+        if AZPInterruptOrder[i] ~= nil then
+            -- InterruptFrameHeader = InterruptFrameHeader .. AZPInterruptOrder[i] .. "\n"
+            AZPinterruptOrderCooldownBars[i].name:SetText(AZPInterruptOrder[i])
+            AZPinterruptOrderCooldownBars[i]:Show()
+            
+            -- refill bars based on CD.
+            -- change color of bars based on classColor.
+        end
+    end
+
+    AZPInterruptHelperFrame.text:SetText(InterruptFrameHeader)
+
+    local unitName, unitRealm = UnitFullName("PLAYER")
+    if (AZPInterruptOrder[1] == unitName or AZPInterruptOrder[1] == unitName .. "-" .. unitRealm) then
+        blinkingTicker = C_Timer.NewTicker(0.5, function() AZPInterruptHelper:InterruptBlinking(blinkingBoolean) end, 10)
+    else
+        AZPInterruptHelper:InterruptBlinking(false)
+    end
+end
+
+function AZPInterruptHelper:InterruptBlinking(boolean)
+    if boolean == true then
+        AZPInterruptHelperFrame:SetBackdropColor(1,0,0,1)
+        AZPInterruptHelperFrame:SetBackdropBorderColor(1, 1, 1, 1)
+        blinkingBoolean = false
+    else
+        AZPInterruptHelperFrame:SetBackdropColor(1, 1, 1, 1)
+        AZPInterruptHelperFrame:SetBackdropBorderColor(1, 0, 0, 1)
+        blinkingBoolean = true
+    end
+end
+
+function AZPInterruptHelper:StructureInterrupts(interruptedName, interruptSpellID)
+    local interuptedIndex = nil
+    local interruptCooldown = nil
+    for i = 1, #AZPInterruptOrder do
+        if AZPInterruptOrder[i] == interruptedName then
+            interuptedIndex = i
+        end
+    end
+
+    local spellCooldown = AZPInterruptHelper:GetSpellCooldown(interruptSpellID)
+    AZPinterruptOrderCooldownBars[interuptedIndex]:SetMinMaxValues(0, spellCooldown)
+    AZPinterruptOrderCooldownBars[interuptedIndex].text:SetText(spellCooldown)
+
+    local temp = AZPInterruptOrder[interuptedIndex]
+    local temp2 = AZPinterruptOrderCooldownBars[interuptedIndex]
+    for i = interuptedIndex, #AZPInterruptOrder - 1 do
+        AZPInterruptOrder[i] = AZPInterruptOrder[i+1]
+        AZPinterruptOrderCooldownBars[i] = AZPinterruptOrderCooldownBars[i+1]
+    end
+    AZPInterruptOrder[#AZPInterruptOrder] = temp
+    AZPinterruptOrderCooldownBars[#AZPInterruptOrder] = temp2
+    AZPInterruptHelper:SaveInterrupts()
+end
+
+function AZPInterruptHelper:OnEvent(self, event, ...)
+    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+        local v1, combatEvent, v3, v4, casterName, v6, v7, v8, v9, v10, v11, spellID, v13, v14, v15 = CombatLogGetCurrentEventInfo()
+        -- v12 == SpellID, but not always, sometimes several IDs for one spell (when multiple things happen on one spell)
+        if combatEvent == "SPELL_CAST_SUCCESS" then
+            local unitName, unitRealm = UnitFullName("PLAYER")
+            if AZPInterruptHelper.interruptSpells[spellID] ~= nil then
+                AZPInterruptHelper:StructureInterrupts(casterName, spellID)
+                if (casterName == unitName or casterName == unitName .. "-" .. unitRealm) then
+                    if blinkingTicker ~= nil then
+                        blinkingTicker:Cancel()
+                    end
+                    AZPInterruptHelper:InterruptBlinking(false)
+                end
+            end
+        end
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        AZPInterruptHelperFrame:SetPoint(AZPInterruptHelperLocation[1], AZPInterruptHelperLocation[4], AZPInterruptHelperLocation[5])
+        InterruptButton:SetAttribute("type", "spell")
+        AZPInterruptHelper:PickInterrupt()
+        InterruptButton:SetAttribute("target", "target")
+    end
+end
+
+AZPInterruptHelper:OnLoad()
