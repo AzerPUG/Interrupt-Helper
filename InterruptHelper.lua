@@ -95,10 +95,11 @@ function AZPInterruptHelper:OnLoad()
     })
     AZPInterruptHelperFrame:SetBackdropColor(0.5, 0.5, 0.5, 0.75)
     AZPInterruptHelperFrame:SetBackdropBorderColor(1, 1, 1, 1)
-    AZPInterruptHelperFrame.text = AZPInterruptHelperFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    AZPInterruptHelperFrame.text:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
-    AZPInterruptHelperFrame.text:SetPoint("TOP", 0, -5)
-    AZPInterruptHelperFrame.text:SetText("Nothing!")
+    AZPInterruptHelperFrame.header = AZPInterruptHelperFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    AZPInterruptHelperFrame.header:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
+    AZPInterruptHelperFrame.header:SetPoint("TOP", 0, -10)
+    AZPInterruptHelperFrame.header:SetJustifyV("TOP")
+    AZPInterruptHelperFrame.header:SetText("Nothing!")
 
     InterruptButton = CreateFrame("Button", nil, AZPInterruptHelperFrame, "SecureActionButtonTemplate")
     InterruptButton:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
@@ -124,6 +125,7 @@ function AZPInterruptHelper:OnLoad()
         AZPinterruptOrderCooldownBars[i].cooldown:SetSize(25, 16)
         AZPinterruptOrderCooldownBars[i].cooldown:SetPoint("RIGHT", -5, 0)
         AZPinterruptOrderCooldownBars[i].cooldown:SetText("-")
+        AZPinterruptOrderCooldownBars[i]:SetStatusBarColor(0, 0.75, 1)
         AZPinterruptOrderCooldownBars[i]:Hide()
     end
 
@@ -164,8 +166,8 @@ end
 
 function AZPInterruptHelper:ChangeFrameHeight()
     AZPInterruptHelperFrame:SetHeight(#AZPInterruptOrder * 25 + 50)
-    --AZPInterruptHelperFrame:SetHeight(AZPInterruptHelperFrame.text:GetStringHeight() + 40)
-    --AZPInterruptHelperFrame.text:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
+    --AZPInterruptHelperFrame:SetHeight(AZPInterruptHelperFrame.header:GetStringHeight() + 40)
+    --AZPInterruptHelperFrame.header:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
 end
 
 function AZPInterruptHelper:SaveInterrupts()
@@ -182,7 +184,7 @@ function AZPInterruptHelper:SaveInterrupts()
         end
     end
 
-    AZPInterruptHelperFrame.text:SetText(InterruptFrameHeader)
+    AZPInterruptHelperFrame.header:SetText(InterruptFrameHeader)
 
     local unitName, unitRealm = UnitFullName("PLAYER")
     if (AZPInterruptOrder[1] == unitName or AZPInterruptOrder[1] == unitName .. "-" .. unitRealm) then
@@ -215,16 +217,18 @@ function AZPInterruptHelper:StructureInterrupts(interruptedName, interruptSpellI
 
     local spellCooldown = AZPInterruptHelper:GetSpellCooldown(interruptSpellID)
     AZPinterruptOrderCooldownBars[interuptedIndex]:SetMinMaxValues(0, spellCooldown)
-    AZPinterruptOrderCooldownBars[interuptedIndex].text:SetText(spellCooldown)
+    AZPinterruptOrderCooldownBars[interuptedIndex].cooldown:SetText(spellCooldown)
 
     local temp = AZPInterruptOrder[interuptedIndex]
     local temp2 = AZPinterruptOrderCooldownBars[interuptedIndex]
     for i = interuptedIndex, #AZPInterruptOrder - 1 do
         AZPInterruptOrder[i] = AZPInterruptOrder[i+1]
         AZPinterruptOrderCooldownBars[i] = AZPinterruptOrderCooldownBars[i+1]
+        AZPinterruptOrderCooldownBars[i]:SetPoint("TOP", 0, -20 * i - 25)
     end
     AZPInterruptOrder[#AZPInterruptOrder] = temp
     AZPinterruptOrderCooldownBars[#AZPInterruptOrder] = temp2
+    AZPinterruptOrderCooldownBars[#AZPInterruptOrder]:SetPoint("TOP", 0, -20 * #AZPInterruptOrder - 25)
     AZPInterruptHelper:SaveInterrupts()
 end
 
