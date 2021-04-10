@@ -1,6 +1,12 @@
-local GlobalAddonName, AZPInterruptHelper = ...
+if AZP == nil then AZP = {} end
+if AZP.VersionControl == nil then AZP.VersionControl = {} end
+if AZP.OnLoad == nil then AZP.OnLoad = {} end
+if AZP.OnEvent == nil then AZP.OnEvent = {} end
+if AZP.OnEvent == nil then AZP.OnEvent = {} end
 
-local AZPInterruptHelperVersion = 1
+AZP.VersionControl.InterruptHelper = 1
+if AZP.InterruptHelper == nil then AZP = {} end
+
 local dash = " - "
 local name = "Interrupt Helper"
 local nameFull = ("AzerPUG's " .. name)
@@ -17,11 +23,11 @@ local InterruptButton = nil
 local blinkingBoolean = false
 local blinkingTicker, cooldownTicker = nil, nil
 
-function AZPInterruptHelper:VersionControl()
+function AZP.InterruptHelper:VersionControl()
     return AZPInterruptHelperVersion
 end
 
-function AZPInterruptHelper:OnLoad()
+function AZP.InterruptHelper:OnLoad()
     AZPInterruptHelperOptionPanel = CreateFrame("FRAME", nil)
     AZPInterruptHelperOptionPanel.name = "|cFF00FFFFAzerPUG's Interrupt Helper|r"
     InterfaceOptions_AddCategory(AZPInterruptHelperOptionPanel)
@@ -68,8 +74,8 @@ function AZPInterruptHelper:OnLoad()
                     AZPInterruptOrder[j] = nil
                 end
             end
-            AZPInterruptHelper:SaveInterrupts()
-            AZPInterruptHelper:ChangeFrameHeight()
+            AZP.InterruptHelper:SaveInterrupts()
+            AZP.InterruptHelper:ChangeFrameHeight()
         end)
     end
 
@@ -84,7 +90,7 @@ function AZPInterruptHelper:OnLoad()
     AZPInterruptHelperFrame:SetMovable(true)
     AZPInterruptHelperFrame:RegisterForDrag("LeftButton")
     AZPInterruptHelperFrame:SetScript("OnDragStart", AZPInterruptHelperFrame.StartMoving)
-    AZPInterruptHelperFrame:SetScript("OnDragStop", function() AZPInterruptHelperFrame:StopMovingOrSizing() AZPInterruptHelper:SaveLocation() end)
+    AZPInterruptHelperFrame:SetScript("OnDragStop", function() AZP.InterruptHelperFrame:StopMovingOrSizing() AZP.InterruptHelper:SaveLocation() end)
     AZPInterruptHelperFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     AZPInterruptHelperFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     AZPInterruptHelperFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
@@ -136,17 +142,17 @@ function AZPInterruptHelper:OnLoad()
     local CuntButton = CreateFrame("Button", nil, AZPInterruptHelperFrame, "UIPanelButtonTemplate")
     CuntButton:SetSize(25, 25)
     CuntButton:SetPoint("TOPLEFT", AZPInterruptHelperFrame, "TOPLEFT", -22, 2)
-    CuntButton:SetScript("OnClick", function() AZPInterruptHelper:StructureInterrupts(AZPInterruptOrder[1], nil) end)
+    CuntButton:SetScript("OnClick", function() AZP.InterruptHelper:StructureInterrupts(AZPInterruptOrder[1], nil) end)
     CuntButton:SetText("X")
 
-    AZPInterruptHelper:ChangeFrameHeight()
+    AZP.InterruptHelper:ChangeFrameHeight()
 end
 
-function AZPInterruptHelper:PickInterrupt()
+function AZP.InterruptHelper:PickInterrupt()
     local className = select(2, UnitClass("player"))        -- Find out if select is better then using wildcards.
     local currentSpec = GetSpecialization()
     local currentSpecName = select(2, GetSpecializationInfo(currentSpec))
-    for spellID, interruptInfo in pairs(AZPInterruptHelper.interruptSpells) do
+    for spellID, interruptInfo in pairs(AZP.InterruptHelper.interruptSpells) do
         if interruptInfo[2] == className then
             for i = 1, #interruptInfo[3] do
                 if interruptInfo[3][i] == currentSpecName then
@@ -158,23 +164,21 @@ function AZPInterruptHelper:PickInterrupt()
     end
 end
 
-function AZPInterruptHelper:GetSpellCooldown(interruptSpellID)
-    return AZPInterruptHelper.interruptSpells[interruptSpellID][4]
+function AZP.InterruptHelper:GetSpellCooldown(interruptSpellID)
+    return AZP.InterruptHelper.interruptSpells[interruptSpellID][4]
 end
 
-function AZPInterruptHelper:SaveLocation()
+function AZP.InterruptHelper:SaveLocation()
     local temp = {}
     temp[1], temp[2], temp[3], temp[4], temp[5] = AZPInterruptHelperFrame:GetPoint()
     AZPInterruptHelperLocation = temp
 end
 
-function AZPInterruptHelper:ChangeFrameHeight()
-    AZPInterruptHelperFrame:SetHeight(#AZPInterruptOrder * 25 + 50)
-    --AZPInterruptHelperFrame:SetHeight(AZPInterruptHelperFrame.header:GetStringHeight() + 40)
-    --AZPInterruptHelperFrame.header:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
+function AZP.InterruptHelper:ChangeFrameHeight()
+    AZP.InterruptHelperFrame:SetHeight(#AZPInterruptOrder * 25 + 50)
 end
 
-function AZPInterruptHelper:TickCoolDowns()
+function AZP.InterruptHelper:TickCoolDowns()
     for i = 1, #AZPinterruptOrderCooldownBars do
         if AZPinterruptOrderCooldowns[i] ~= nil then
             if AZPinterruptOrderCooldowns[i] <= 0 then
@@ -191,17 +195,13 @@ function AZPInterruptHelper:TickCoolDowns()
     end
 end
 
-function AZPInterruptHelper:SaveInterrupts()
+function AZP.InterruptHelper:SaveInterrupts()
     local InterruptFrameHeader = "Interrupt Order:\n"
     for i = 1, 10 do
         AZPinterruptOrderCooldownBars[i]:Hide()
         if AZPInterruptOrder[i] ~= nil then
-            -- InterruptFrameHeader = InterruptFrameHeader .. AZPInterruptOrder[i] .. "\n"
             AZPinterruptOrderCooldownBars[i].name:SetText(AZPInterruptOrder[i])
             AZPinterruptOrderCooldownBars[i]:Show()
-
-            -- refill bars based on CD.
-            -- change color of bars based on classColor.
         end
     end
 
@@ -215,7 +215,7 @@ function AZPInterruptHelper:SaveInterrupts()
     end
 end
 
-function AZPInterruptHelper:InterruptBlinking(boolean)
+function AZP.InterruptHelper:InterruptBlinking(boolean)
     if boolean == true then
         AZPInterruptHelperFrame:SetBackdropColor(1,0,0,1)
         AZPInterruptHelperFrame:SetBackdropBorderColor(1, 1, 1, 1)
@@ -227,7 +227,7 @@ function AZPInterruptHelper:InterruptBlinking(boolean)
     end
 end
 
-function AZPInterruptHelper:StructureInterrupts(interruptedName, interruptSpellID)
+function AZP.InterruptHelper:StructureInterrupts(interruptedName, interruptSpellID)
     local interuptedIndex = nil
     local interruptCooldown = nil
     for i = 1, #AZPInterruptOrder do
@@ -236,7 +236,7 @@ function AZPInterruptHelper:StructureInterrupts(interruptedName, interruptSpellI
         end
     end
 
-    local spellCooldown = AZPInterruptHelper:GetSpellCooldown(interruptSpellID)
+    local spellCooldown = AZP.InterruptHelper:GetSpellCooldown(interruptSpellID)
     AZPinterruptOrderCooldowns[interuptedIndex] = spellCooldown
     AZPinterruptOrderCooldownBars[interuptedIndex]:SetMinMaxValues(0, spellCooldown)
     AZPinterruptOrderCooldownBars[interuptedIndex].cooldown:SetText(spellCooldown)
@@ -256,35 +256,35 @@ function AZPInterruptHelper:StructureInterrupts(interruptedName, interruptSpellI
     AZPinterruptOrderCooldowns[#AZPInterruptOrder] = temp3
     AZPinterruptOrderCooldownBars[#AZPInterruptOrder]:SetPoint("TOP", 0, -20 * #AZPInterruptOrder - 25)
 
-    AZPInterruptHelper:SaveInterrupts()
+    AZP.InterruptHelper:SaveInterrupts()
 end
 
-function AZPInterruptHelper:OnEvent(self, event, ...)
+function AZP.InterruptHelper:OnEvent(self, event, ...)
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
         local v1, combatEvent, v3, v4, casterName, v6, v7, v8, v9, v10, v11, spellID, v13, v14, v15 = CombatLogGetCurrentEventInfo()
         -- v12 == SpellID, but not always, sometimes several IDs for one spell (when multiple things happen on one spell)
         if combatEvent == "SPELL_CAST_SUCCESS" then
             local unitName, unitRealm = UnitFullName("PLAYER")
-            if AZPInterruptHelper.interruptSpells[spellID] ~= nil then
-                AZPInterruptHelper:StructureInterrupts(casterName, spellID)
+            if AZP.InterruptHelper.interruptSpells[spellID] ~= nil then
+                AZP.InterruptHelper:StructureInterrupts(casterName, spellID)
                 if (casterName == unitName or casterName == unitName .. "-" .. unitRealm) then
                     if blinkingTicker ~= nil then
                         blinkingTicker:Cancel()
                     end
-                    AZPInterruptHelper:InterruptBlinking(false)
+                    AZP.InterruptHelper:InterruptBlinking(false)
                 end
             end
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         AZPInterruptHelperFrame:SetPoint(AZPInterruptHelperLocation[1], AZPInterruptHelperLocation[4], AZPInterruptHelperLocation[5])
         InterruptButton:SetAttribute("type", "spell")
-        AZPInterruptHelper:PickInterrupt()
+        AZP.InterruptHelper:PickInterrupt()
         InterruptButton:SetAttribute("target", "target")
     elseif event == "PLAYER_ENTER_COMBAT" then
-        cooldownTicker = C_Timer.NewTicker(1, function() AZPInterruptHelper:TickCoolDowns() end, 1000)
+        cooldownTicker = C_Timer.NewTicker(1, function() AZP.InterruptHelper:TickCoolDowns() end, 1000)
     elseif event == "PLAYER_LEAVE_COMBAT" then
         cooldownTicker:Cancel()
     end
 end
 
-AZPInterruptHelper:OnLoad()
+AZP.InterruptHelper:OnLoad()

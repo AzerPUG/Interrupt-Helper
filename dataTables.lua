@@ -1,6 +1,7 @@
-local GlobalAddonName, AZPInterruptHelper = ...
+if AZP == nil then AZP = {} end
+if AZP.InterruptHelper == nil then AZP = {} end
 
-AZPInterruptHelper.interruptSpells =
+AZP.InterruptHelper.interruptSpells =
 {
     [15487] = {"Silence", "PRIEST", {"Shadow"}, 45},        -- Cooldown can be lowered with a talent.
 
