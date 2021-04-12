@@ -1,5 +1,5 @@
 if AZP == nil then AZP = {} end
-if AZP.InterruptHelper == nil then AZP = {} end
+if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 AZP.InterruptHelper.interruptSpells =
 {

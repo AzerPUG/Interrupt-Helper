@@ -4,7 +4,7 @@
 ## OptionalDeps: AzerPUG's Core
 ## Notes: AzerPUG's Interrupt Helper.
 ## Version: SL 9.0.5
-## SavedVariables: AZPInterruptHelperLocation
+## SavedVariables: AZPInterruptHelperLocation, AZPInterruptHelperSettingsList
 
 dataTables.lua
 InterruptHelper.lua
