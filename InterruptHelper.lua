@@ -10,13 +10,11 @@ if AZP.InterruptHelper == nil then AZP = {} end
 local dash = " - "
 local name = "Interrupt Helper"
 local nameFull = ("AzerPUG's " .. name)
-local promo = (nameFull .. dash ..  AZPInterruptHelperVersion)
+local promo = (nameFull .. dash ..  AZP.VersionControl.InterruptHelper)
 
 local AZPInterruptHelperFrame, AZPInterruptHelperOptionPanel = nil, nil
 
-local AZPInterruptOrder, AZPInterruptOrderEditBoxes, AZPinterruptOrderCooldownBars = {}, {}, {}
-
-AZPinterruptOrderCooldowns = {}
+local AZPInterruptOrder, AZPInterruptOrderEditBoxes = {}, {}
 
 local InterruptButton = nil
 
@@ -116,29 +114,6 @@ function AZP.InterruptHelper:OnLoad()
     InterruptButton:SetPoint("Center", 0, 0)
     InterruptButton:EnableMouse(true)
 
-    for i = 1, 10 do
-        AZPinterruptOrderCooldownBars[i] = CreateFrame("StatusBar", nil, AZPInterruptHelperFrame)
-        AZPinterruptOrderCooldownBars[i]:SetSize(AZPInterruptHelperFrame:GetWidth() - 20, 18)
-        AZPinterruptOrderCooldownBars[i]:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
-        AZPinterruptOrderCooldownBars[i]:SetPoint("TOP", 0, -20 * i - 25)
-        AZPinterruptOrderCooldownBars[i]:SetMinMaxValues(0, 100)
-        AZPinterruptOrderCooldownBars[i]:SetValue(100)
-        AZPinterruptOrderCooldownBars[i].name = AZPinterruptOrderCooldownBars[i]:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-        AZPinterruptOrderCooldownBars[i].name:SetSize(AZPinterruptOrderCooldownBars[i]:GetWidth() - 25, 16)
-        AZPinterruptOrderCooldownBars[i].name:SetPoint("CENTER", 0, -1)
-        AZPinterruptOrderCooldownBars[i].name:SetText("charName")
-        AZPinterruptOrderCooldownBars[i].bg = AZPinterruptOrderCooldownBars[i]:CreateTexture(nil, "BACKGROUND")
-        AZPinterruptOrderCooldownBars[i].bg:SetTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
-        AZPinterruptOrderCooldownBars[i].bg:SetAllPoints(true)
-        AZPinterruptOrderCooldownBars[i].bg:SetVertexColor(1, 0, 0)
-        AZPinterruptOrderCooldownBars[i].cooldown = AZPinterruptOrderCooldownBars[i]:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-        AZPinterruptOrderCooldownBars[i].cooldown:SetSize(25, 16)
-        AZPinterruptOrderCooldownBars[i].cooldown:SetPoint("RIGHT", -5, 0)
-        AZPinterruptOrderCooldownBars[i].cooldown:SetText("-")
-        AZPinterruptOrderCooldownBars[i]:SetStatusBarColor(0, 0.75, 1)
-        AZPinterruptOrderCooldownBars[i]:Hide()
-    end
-
     local CuntButton = CreateFrame("Button", nil, AZPInterruptHelperFrame, "UIPanelButtonTemplate")
     CuntButton:SetSize(25, 25)
     CuntButton:SetPoint("TOPLEFT", AZPInterruptHelperFrame, "TOPLEFT", -22, 2)
@@ -164,10 +139,6 @@ function AZP.InterruptHelper:PickInterrupt()
     end
 end
 
-function AZP.InterruptHelper:GetSpellCooldown(interruptSpellID)
-    return AZP.InterruptHelper.interruptSpells[interruptSpellID][4]
-end
-
 function AZP.InterruptHelper:SaveLocation()
     local temp = {}
     temp[1], temp[2], temp[3], temp[4], temp[5] = AZPInterruptHelperFrame:GetPoint()
@@ -176,23 +147,6 @@ end
 
 function AZP.InterruptHelper:ChangeFrameHeight()
     AZP.InterruptHelperFrame:SetHeight(#AZPInterruptOrder * 25 + 50)
-end
-
-function AZP.InterruptHelper:TickCoolDowns()
-    for i = 1, #AZPinterruptOrderCooldownBars do
-        if AZPinterruptOrderCooldowns[i] ~= nil then
-            if AZPinterruptOrderCooldowns[i] <= 0 then
-                AZPinterruptOrderCooldowns[i] = nil
-                AZPinterruptOrderCooldownBars[i].cooldown:SetText("-")
-                AZPinterruptOrderCooldownBars[i]:SetMinMaxValues(0, 100)
-                AZPinterruptOrderCooldownBars[i]:SetValue(100)
-            else
-                AZPinterruptOrderCooldowns[i] = AZPinterruptOrderCooldowns[i] - 1
-                AZPinterruptOrderCooldownBars[i].cooldown:SetText(AZPinterruptOrderCooldowns[i])
-                AZPinterruptOrderCooldownBars[i]:SetValue(AZPinterruptOrderCooldowns[i])
-            end
-        end
-    end
 end
 
 function AZP.InterruptHelper:SaveInterrupts()
@@ -229,7 +183,6 @@ end
 
 function AZP.InterruptHelper:StructureInterrupts(interruptedName, interruptSpellID)
     local interuptedIndex = nil
-    local interruptCooldown = nil
     for i = 1, #AZPInterruptOrder do
         if AZPInterruptOrder[i] == interruptedName then
             interuptedIndex = i
@@ -237,23 +190,13 @@ function AZP.InterruptHelper:StructureInterrupts(interruptedName, interruptSpell
     end
 
     local spellCooldown = AZP.InterruptHelper:GetSpellCooldown(interruptSpellID)
-    AZPinterruptOrderCooldowns[interuptedIndex] = spellCooldown
-    AZPinterruptOrderCooldownBars[interuptedIndex]:SetMinMaxValues(0, spellCooldown)
-    AZPinterruptOrderCooldownBars[interuptedIndex].cooldown:SetText(spellCooldown)
 
     local temp = AZPInterruptOrder[interuptedIndex]
-    local temp2 = AZPinterruptOrderCooldownBars[interuptedIndex]
-    local temp3 = AZPinterruptOrderCooldowns[interuptedIndex]
 
     for i = interuptedIndex, #AZPInterruptOrder - 1 do
         AZPInterruptOrder[i] = AZPInterruptOrder[i+1]
-        AZPinterruptOrderCooldownBars[i] = AZPinterruptOrderCooldownBars[i+1]
-        AZPinterruptOrderCooldowns[i] = AZPinterruptOrderCooldowns[i+1]
-        AZPinterruptOrderCooldownBars[i]:SetPoint("TOP", 0, -20 * i - 25)
     end
     AZPInterruptOrder[#AZPInterruptOrder] = temp
-    AZPinterruptOrderCooldownBars[#AZPInterruptOrder] = temp2
-    AZPinterruptOrderCooldowns[#AZPInterruptOrder] = temp3
     AZPinterruptOrderCooldownBars[#AZPInterruptOrder]:SetPoint("TOP", 0, -20 * #AZPInterruptOrder - 25)
 
     AZP.InterruptHelper:SaveInterrupts()
