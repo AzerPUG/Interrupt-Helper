@@ -4,7 +4,7 @@ if AZP.OnLoad == nil then AZP.OnLoad = {} end
 if AZP.OnEvent == nil then AZP.OnEvent = {} end
 if AZP.OnEvent == nil then AZP.OnEvent = {} end
 
-AZP.VersionControl.InterruptHelper = 1
+AZP.VersionControl.InterruptHelper = 2
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local dash = " - "
@@ -19,6 +19,8 @@ if AZPInterruptHelperSettingsList == nil then AZPInterruptHelperSettingsList = {
 
 local InterruptButton = nil
 
+local UpdateFrame = nil
+
 local blinkingBoolean = false
 local blinkingTicker = nil
 
@@ -27,13 +29,15 @@ function AZP.InterruptHelper:VersionControl()
 end
 
 function AZP.InterruptHelper:OnLoad()
+    C_ChatInfo.RegisterAddonMessagePrefix("AZPVERSIONS")
+
     AZPInterruptHelperOptionPanel = CreateFrame("FRAME", nil)
     AZPInterruptHelperOptionPanel.name = "|cFF00FFFFAzerPUG's Interrupt Helper|r"
     InterfaceOptions_AddCategory(AZPInterruptHelperOptionPanel)
 
     AZPInterruptHelperOptionPanel.header = AZPInterruptHelperOptionPanel:CreateFontString("AZPInterruptHelperOptionPanel", "ARTWORK", "GameFontNormalHuge")
     AZPInterruptHelperOptionPanel.header:SetPoint("TOP", 0, -10)
-    AZPInterruptHelperOptionPanel.header:SetText("|cFF00FFFFAzerPUG ToolTips Options!|r")
+    AZPInterruptHelperOptionPanel.header:SetText("|cFF00FFFFAzerPUG's Interrupt Helper Options!|r")
 
     AZPInterruptHelperOptionPanel.footer = AZPInterruptHelperOptionPanel:CreateFontString("AZPInterruptHelperOptionPanel", "ARTWORK", "GameFontNormalLarge")
     AZPInterruptHelperOptionPanel.footer:SetPoint("TOP", 0, -400)
@@ -89,6 +93,7 @@ function AZP.InterruptHelper:OnLoad()
     AZPInterruptHelperFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
     AZPInterruptHelperFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     AZPInterruptHelperFrame:RegisterEvent("VARIABLES_LOADED")
+    AZPInterruptHelperFrame:RegisterEvent("CHAT_MSG_ADDON")
     AZPInterruptHelperFrame:SetScript("OnEvent", function(...) AZP.InterruptHelper:OnEvent(...) end)
     AZPInterruptHelperFrame:SetSize(200, 200)
     AZPInterruptHelperFrame:SetBackdrop({
@@ -110,6 +115,32 @@ function AZP.InterruptHelper:OnLoad()
     AZPInterruptHelperFrame.text:SetPoint("TOP", 0, -40)
     AZPInterruptHelperFrame.text:SetJustifyV("TOP")
     AZPInterruptHelperFrame.text:SetText("Nothing!")
+
+    UpdateFrame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
+    UpdateFrame:SetPoint("CENTER", 0, 250)
+    UpdateFrame:SetSize(400, 200)
+    UpdateFrame:SetBackdrop({
+        bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+        edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+        edgeSize = 12,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 },
+    })
+    UpdateFrame:SetBackdropColor(0.25, 0.25, 0.25, 0.80)
+    UpdateFrame.header = UpdateFrame:CreateFontString("UpdateFrame", "ARTWORK", "GameFontNormalHuge")
+    UpdateFrame.header:SetPoint("TOP", 0, -10)
+    UpdateFrame.header:SetText("|cFFFF0000AzerPUG's InterruptHelper is out of date!|r")
+
+    UpdateFrame.text = UpdateFrame:CreateFontString("UpdateFrame", "ARTWORK", "GameFontNormalLarge")
+    UpdateFrame.text:SetPoint("TOP", 0, -40)
+    UpdateFrame.text:SetText("Error!")
+
+    local UpdateFrameCloseButton = CreateFrame("Button", nil, UpdateFrame, "UIPanelCloseButton")
+    UpdateFrameCloseButton:SetWidth(25)
+    UpdateFrameCloseButton:SetHeight(25)
+    UpdateFrameCloseButton:SetPoint("TOPRIGHT", UpdateFrame, "TOPRIGHT", 2, 2)
+    UpdateFrameCloseButton:SetScript("OnClick", function() UpdateFrame:Hide() end )
+
+    UpdateFrame:Hide()
 end
 
 function AZP.InterruptHelper:LoadSavedVars()
@@ -184,6 +215,50 @@ function AZP.InterruptHelper:StructureInterrupts(interruptedName, interruptSpell
     end
 end
 
+function AZP.InterruptHelper:ShareVersion()
+    local versionString = string.format("|IH:%d|", AZP.VersionControl.InterruptHelper)
+    --DelayedExecution(10, function()
+        if IsInGroup() then
+            if IsInRaid() then
+                C_ChatInfo.SendAddonMessage("AZPVERSIONS", versionString ,"RAID", 1)
+            else
+                C_ChatInfo.SendAddonMessage("AZPVERSIONS", versionString ,"PARTY", 1)
+            end
+        end
+        if IsInGuild() then
+            C_ChatInfo.SendAddonMessage("AZPVERSIONS", versionString ,"GUILD", 1)
+        end
+    --end)
+end
+
+function AZP.InterruptHelper:ReceiveVersion(version)
+    if version > AZP.VersionControl.InterruptHelper then
+        if (not HaveShowedUpdateNotification) then
+            HaveShowedUpdateNotification = true
+            UpdateFrame:Show()
+            UpdateFrame.text:SetText(
+                "Please download the new version through the CurseForge app.\n" ..
+                "Or use the CurseForge website to download it manually!\n\n" .. 
+                "Newer Version: v" .. version .. "\n" .. 
+                "Your version: v" .. AZP.VersionControl.InterruptHelper
+            )
+        end
+    end
+end
+
+function AZP.InterruptHelper:GetSpecificAddonVersion(versionString, addonWanted)
+    local pattern = "|([A-Z]+):([0-9]+)|"
+    local index = 1
+    while index < #versionString do
+        local _, endPos = string.find(versionString, pattern, index)
+        local addon, version = string.match(versionString, pattern, index)
+        index = endPos + 1
+        if addon == addonWanted then
+            return tonumber(version)
+        end
+    end
+end
+
 function AZP.InterruptHelper:OnEvent(self, event, ...)
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
         local v1, combatEvent, v3, v4, casterName, v6, v7, v8, v9, v10, v11, spellID, v13, v14, v15 = CombatLogGetCurrentEventInfo()
@@ -204,6 +279,12 @@ function AZP.InterruptHelper:OnEvent(self, event, ...)
         AZPInterruptHelperFrame:SetPoint(AZPInterruptHelperLocation[1], AZPInterruptHelperLocation[4], AZPInterruptHelperLocation[5])
     elseif event == "VARIABLES_LOADED" then
         AZP.InterruptHelper:LoadSavedVars()
+        AZP.InterruptHelper:ShareVersion()
+    elseif event == "CHAT_MSG_ADDON" then
+        local prefix, payload, _, sender = ...
+        if prefix == "AZPVERSIONS" then
+            AZP.InterruptHelper:ReceiveVersion(AZP.InterruptHelper:GetSpecificAddonVersion(payload, "IH"))
+        end
     end
 end
 
