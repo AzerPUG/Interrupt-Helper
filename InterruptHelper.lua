@@ -4,7 +4,7 @@ if AZP.OnLoad == nil then AZP.OnLoad = {} end
 if AZP.OnEvent == nil then AZP.OnEvent = {} end
 if AZP.OnEvent == nil then AZP.OnEvent = {} end
 
-AZP.VersionControl.InterruptHelper = 2
+AZP.VersionControl.InterruptHelper = 3
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local dash = " - "
@@ -12,8 +12,7 @@ local name = "Interrupt Helper"
 local nameFull = ("AzerPUG's " .. name)
 
 local AZPInterruptHelperFrame, AZPInterruptHelperOptionPanel = nil, nil
-
-local AZPInterruptOrder, AZPInterruptOrderEditBoxes = {}, {}
+local AZPInterruptOrder, AZPInterruptHelperGUIDs, AZPInterruptOrderEditBoxes, GUIDList = {}, {}, {}, {}
 
 if AZPInterruptHelperSettingsList == nil then AZPInterruptHelperSettingsList = {} end
 
@@ -24,11 +23,26 @@ local UpdateFrame = nil
 local blinkingBoolean = false
 local blinkingTicker = nil
 
+local optionHeader = "|cFF00FFFFInterrupt Helper|r"
+
 function AZP.InterruptHelper:VersionControl()
     return AZP.VersionControl.InterruptHelper
 end
 
-function AZP.InterruptHelper:OnLoad()
+function AZP.InterruptHelper:OnLoadBoth()
+    AZP.InterruptHelper:CreateMainFrame()
+    C_ChatInfo.RegisterAddonMessagePrefix("AZPSHAREINFO")
+end
+
+function AZP.InterruptHelper:OnLoadCore()
+    AZP.InterruptHelper:OnLoadBoth()
+    AZP.Core:RegisterEvents("COMBAT_LOG_EVENT_UNFILTERED", function(...) AZP.InterruptHelper:eventCombatLogEventUnfiltered(...) end)
+    AZP.Core:RegisterEvents("VARIABLES_LOADED", function(...) AZP.InterruptHelper:eventVariablesLoaded(...) end)
+    AZP.Core:RegisterEvents("CHAT_MSG_ADDON", function(...) AZP.InterruptHelper:eventChatMsgAddon(...) end)
+    AZP.OptionsPanels:Generic("Interrupt Helper", optionHeader, function(frame) AZP.InterruptHelper:FillOptionsPanel(frame) end)
+end
+
+function AZP.InterruptHelper:OnLoadSelf()
     C_ChatInfo.RegisterAddonMessagePrefix("AZPVERSIONS")
 
     AZPInterruptHelperOptionPanel = CreateFrame("FRAME", nil)
@@ -48,73 +62,12 @@ function AZP.InterruptHelper:OnLoad()
         "Twitch: www.twitch.tv/azerpug\n|r"
     )
 
-    for i = 1, 10 do
-        local interruptersFrame = CreateFrame("Frame", nil, AZPInterruptHelperOptionPanel)
-        interruptersFrame:SetSize(200, 25)
-        interruptersFrame:SetPoint("LEFT", 75, -30*i + 250)
-        interruptersFrame.editbox = CreateFrame("EditBox", nil, interruptersFrame, "InputBoxTemplate")
-        interruptersFrame.editbox:SetSize(100, 25)
-        interruptersFrame.editbox:SetPoint("LEFT", 50, 0)
-        interruptersFrame.editbox:SetAutoFocus(false)
-        interruptersFrame.text = interruptersFrame:CreateFontString("interruptersFrame", "ARTWORK", "GameFontNormalLarge")
-        interruptersFrame.text:SetSize(100, 25)
-        interruptersFrame.text:SetPoint("LEFT", -50, 0)
-        interruptersFrame.text:SetText("Interrupter " .. i .. ":")
-
-        AZPInterruptOrderEditBoxes[i] = interruptersFrame
-
-        interruptersFrame.editbox:SetScript("OnEditFocusLost",
-        function()
-            for j = 1, 10 do
-                if (AZPInterruptOrderEditBoxes[j].editbox:GetText() ~= nil and AZPInterruptOrderEditBoxes[j].editbox:GetText() ~= "") then
-                    AZPInterruptOrder[j] = AZPInterruptOrderEditBoxes[j].editbox:GetText()
-                else
-                    AZPInterruptOrder[j] = nil
-                end
-                AZPInterruptHelperSettingsList[j] = AZPInterruptOrder[j]
-            end
-            AZP.InterruptHelper:SaveInterrupts()
-            AZP.InterruptHelper:ChangeFrameHeight()
-        end)
-    end
-
-    AZPInterruptHelperOptionPanel:Hide()
+    AZP.InterruptHelper:FillOptionsPanel(AZPInterruptHelperOptionPanel)
+    AZP.InterruptHelper:OnLoadBoth()
 
     if AZPInterruptHelperLocation == nil then
         AZPInterruptHelperLocation = {"CENTER", 200, -200}
     end
-
-    AZPInterruptHelperFrame = CreateFrame("FRAME", nil, UIParent, "BackdropTemplate")
-    AZPInterruptHelperFrame:EnableMouse(true)
-    AZPInterruptHelperFrame:SetMovable(true)
-    AZPInterruptHelperFrame:RegisterForDrag("LeftButton")
-    AZPInterruptHelperFrame:SetScript("OnDragStart", AZPInterruptHelperFrame.StartMoving)
-    AZPInterruptHelperFrame:SetScript("OnDragStop", function() AZPInterruptHelperFrame:StopMovingOrSizing() AZP.InterruptHelper:SaveLocation() end)
-    AZPInterruptHelperFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    AZPInterruptHelperFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-    AZPInterruptHelperFrame:RegisterEvent("VARIABLES_LOADED")
-    AZPInterruptHelperFrame:RegisterEvent("CHAT_MSG_ADDON")
-    AZPInterruptHelperFrame:SetScript("OnEvent", function(...) AZP.InterruptHelper:OnEvent(...) end)
-    AZPInterruptHelperFrame:SetSize(200, 200)
-    AZPInterruptHelperFrame:SetBackdrop({
-        bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-        edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-        edgeSize = 24,
-        insets = { left = 5, right = 5, top = 5, bottom = 5 },
-    })
-    AZPInterruptHelperFrame:SetBackdropColor(0.5, 0.5, 0.5, 0.75)
-    AZPInterruptHelperFrame:SetBackdropBorderColor(1, 1, 1, 1)
-    AZPInterruptHelperFrame.header = AZPInterruptHelperFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
-    AZPInterruptHelperFrame.header:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
-    AZPInterruptHelperFrame.header:SetPoint("TOP", 0, -10)
-    AZPInterruptHelperFrame.header:SetJustifyV("TOP")
-    AZPInterruptHelperFrame.header:SetText("Nothing!")
-
-    AZPInterruptHelperFrame.text = AZPInterruptHelperFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    AZPInterruptHelperFrame.text:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
-    AZPInterruptHelperFrame.text:SetPoint("TOP", 0, -40)
-    AZPInterruptHelperFrame.text:SetJustifyV("TOP")
-    AZPInterruptHelperFrame.text:SetText("Nothing!")
 
     UpdateFrame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     UpdateFrame:SetPoint("CENTER", 0, 250)
@@ -143,15 +96,160 @@ function AZP.InterruptHelper:OnLoad()
     UpdateFrame:Hide()
 end
 
-function AZP.InterruptHelper:LoadSavedVars()
+function AZP.InterruptHelper:FillOptionsPanel(frameToFill)
+    local ShareButton = CreateFrame("Button", nil, frameToFill, "UIPanelButtonTemplate")
+    ShareButton.text = ShareButton:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    ShareButton.text:SetText("Share List")
+    ShareButton:SetWidth("100")
+    ShareButton:SetHeight("25")
+    ShareButton.text:SetWidth("100")
+    ShareButton.text:SetHeight("15")
+    ShareButton:SetPoint("TOP", 100, -50)
+    ShareButton.text:SetPoint("CENTER", 0, -1)
+    ShareButton:SetScript("OnClick", function() AZP.InterruptHelper:ShareInterrupters() end )
+
     for i = 1, 10 do
-        if AZPInterruptHelperSettingsList[i] ~= nill then
-            AZPInterruptOrderEditBoxes[i].editbox:SetText(AZPInterruptHelperSettingsList[i])
+        local interruptersFrame = CreateFrame("Frame", nil, frameToFill)
+        interruptersFrame:SetSize(200, 25)
+        interruptersFrame:SetPoint("LEFT", 75, -30*i + 250)
+        interruptersFrame.editbox = CreateFrame("EditBox", nil, interruptersFrame, "InputBoxTemplate")
+        interruptersFrame.editbox:SetSize(100, 25)
+        interruptersFrame.editbox:SetPoint("LEFT", 50, 0)
+        interruptersFrame.editbox:SetAutoFocus(false)
+        interruptersFrame.text = interruptersFrame:CreateFontString("interruptersFrame", "ARTWORK", "GameFontNormalLarge")
+        interruptersFrame.text:SetSize(100, 25)
+        interruptersFrame.text:SetPoint("LEFT", -50, 0)
+        interruptersFrame.text:SetText("Interrupter " .. i .. ":")
+
+        AZPInterruptOrderEditBoxes[i] = interruptersFrame
+
+        interruptersFrame.editbox:SetScript("OnEditFocusLost",
+        function()
+            for j = 1, 10 do
+                if (AZPInterruptOrderEditBoxes[j].editbox:GetText() ~= nil and AZPInterruptOrderEditBoxes[j].editbox:GetText() ~= "") then
+                    for k = 1, 40 do
+                        if GetRaidRosterInfo(k) ~= nil then             -- For party GetPartyMember(j) ~= nil but this excludes the player.
+                            local curGUID = UnitGUID("raid" .. k)
+                            local curName = GetRaidRosterInfo(k)
+                            if string.find(curName, "-") then
+                                curName = string.match(curName, "(.+)-")
+                            end
+                            if curName == AZPInterruptOrderEditBoxes[j].editbox:GetText() then
+                                AZPInterruptOrder[j] = curGUID
+                                AZPInterruptHelperGUIDs[curGUID] = curName
+                            end
+                        end
+                    end
+                else
+                    AZPInterruptOrder[j] = nil
+                end
+                AZPInterruptHelperSettingsList[j] = AZPInterruptOrder[j]
+            end
+            AZP.InterruptHelper:SaveInterrupts()
+            AZP.InterruptHelper:ChangeFrameHeight()
+        end)
+    end
+    frameToFill:Hide()
+end
+
+function AZP.InterruptHelper:CreateMainFrame()
+    AZPInterruptHelperFrame = CreateFrame("FRAME", nil, UIParent, "BackdropTemplate")
+    AZPInterruptHelperFrame:EnableMouse(true)
+    AZPInterruptHelperFrame:SetMovable(true)
+    AZPInterruptHelperFrame:RegisterForDrag("LeftButton")
+    AZPInterruptHelperFrame:SetScript("OnDragStart", AZPInterruptHelperFrame.StartMoving)
+    AZPInterruptHelperFrame:SetScript("OnDragStop", function() AZPInterruptHelperFrame:StopMovingOrSizing() AZP.InterruptHelper:SaveLocation() end)
+    AZPInterruptHelperFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    AZPInterruptHelperFrame:RegisterEvent("VARIABLES_LOADED")
+    AZPInterruptHelperFrame:RegisterEvent("CHAT_MSG_ADDON")
+    AZPInterruptHelperFrame:SetScript("OnEvent", function(...) AZP.InterruptHelper:OnEvent(...) end)
+    AZPInterruptHelperFrame:SetSize(200, 200)
+    AZPInterruptHelperFrame:SetBackdrop({
+        bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+        edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+        edgeSize = 24,
+        insets = { left = 5, right = 5, top = 5, bottom = 5 },
+    })
+    AZPInterruptHelperFrame:SetBackdropColor(0.5, 0.5, 0.5, 0.75)
+    AZPInterruptHelperFrame:SetBackdropBorderColor(1, 1, 1, 1)
+    AZPInterruptHelperFrame.header = AZPInterruptHelperFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
+    AZPInterruptHelperFrame.header:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
+    AZPInterruptHelperFrame.header:SetPoint("TOP", 0, -10)
+    AZPInterruptHelperFrame.header:SetJustifyV("TOP")
+    AZPInterruptHelperFrame.header:SetText("Nothing!")
+
+    AZPInterruptHelperFrame.text = AZPInterruptHelperFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    AZPInterruptHelperFrame.text:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
+    AZPInterruptHelperFrame.text:SetPoint("TOP", 0, -40)
+    AZPInterruptHelperFrame.text:SetJustifyV("TOP")
+    AZPInterruptHelperFrame.text:SetText("Nothing!")
+end
+
+function AZP.InterruptHelper:eventCombatLogEventUnfiltered(...)
+    local v1, combatEvent, v3, UnitGUID, casterName, v6, v7, v8, v9, v10, v11, spellID, v13, v14, v15 = CombatLogGetCurrentEventInfo()
+    -- v12 == SpellID, but not always, sometimes several IDs for one spell (when multiple things happen on one spell)
+    if combatEvent == "SPELL_CAST_SUCCESS" then
+        local unitName = UnitFullName("PLAYER")
+        if AZP.InterruptHelper.interruptSpells[spellID] ~= nil then
+            for i = 1, #AZPInterruptOrder do
+                if UnitGUID == AZPInterruptOrder[i] then
+                    AZP.InterruptHelper:StructureInterrupts(UnitGUID, spellID)
+                end
+            end
+            if casterName == unitName then      -- Change to GUID.
+                if blinkingTicker ~= nil then
+                    blinkingTicker:Cancel()
+                end
+                AZP.InterruptHelper:InterruptBlinking(false)
+            end
+        end
+    end
+end
+
+function AZP.InterruptHelper:eventVariablesLoaded(...)
+    AZP.InterruptHelper:LoadSavedVars()
+    AZP.InterruptHelper:ShareVersion()
+end
+
+function AZP.InterruptHelper:eventChatMsgAddon(...)
+    local prefix, payload, _, sender = ...
+    if prefix == "AZPVERSIONS" then
+        local version = AZP.InterruptHelper:GetSpecificAddonVersion(payload, "IH")
+        if version ~= nil then
+            AZP.InterruptHelper:ReceiveVersion(version)
+        end
+    elseif prefix == "AZPSHAREINFO" then
+        AZP.InterruptHelper:ReceiveInterrupters(payload)
+    end
+end
+
+function AZP.InterruptHelper:LoadSavedVars()
+    AZPInterruptHelperFrame:SetPoint(AZPInterruptHelperLocation[1], AZPInterruptHelperLocation[4], AZPInterruptHelperLocation[5])
+    AZP.InterruptHelper:PutNamesInList()
+    AZP.InterruptHelper:SaveInterrupts()
+    AZP.InterruptHelper:ChangeFrameHeight()
+end
+
+function AZP.InterruptHelper:PutNamesInList()
+    for i = 1, 10 do
+        if AZPInterruptHelperSettingsList[i] ~= nil then
+            for j = 1, 40 do
+                local curName = GetRaidRosterInfo(j)
+                local curGUID = UnitGUID("raid" .. j)
+                if curName ~= nil then
+                    if string.find(curName, "-") then
+                        curName = string.match(curName, "(.+)-")
+                    end
+                    if AZPInterruptHelperSettingsList[i] == curGUID then
+                        AZPInterruptHelperGUIDs[curGUID] = curName
+                    end
+                end
+            end
+            local temp = AZPInterruptHelperGUIDs[AZPInterruptHelperSettingsList[i]]
+            AZPInterruptOrderEditBoxes[i].editbox:SetText(temp)
             AZPInterruptOrder[i] = AZPInterruptHelperSettingsList[i]
         end
     end
-    AZP.InterruptHelper:SaveInterrupts()
-    AZP.InterruptHelper:ChangeFrameHeight()
 end
 
 function AZP.InterruptHelper:SaveLocation()
@@ -169,14 +267,15 @@ function AZP.InterruptHelper:SaveInterrupts()
     local InterruptOrderText = ""
     for i = 1, 10 do
         if AZPInterruptOrder[i] ~= nil then
-            InterruptOrderText = InterruptOrderText .. AZPInterruptOrder[i] .. "\n"
+            local temp = AZPInterruptHelperGUIDs[AZPInterruptOrder[i]]
+            InterruptOrderText = InterruptOrderText .. temp .. "\n"
         end
     end
-    AZPInterruptHelperFrame.text:SetText(InterruptOrderText)
     AZPInterruptHelperFrame.header:SetText(InterruptFrameHeader)
+    AZPInterruptHelperFrame.text:SetText(InterruptOrderText)
 
-    local unitName, unitRealm = UnitFullName("PLAYER")
-    if (AZPInterruptOrder[1] == unitName or AZPInterruptOrder[1] == unitName .. "-" .. unitRealm) then
+    local playerGUID = UnitGUID("player")
+    if AZPInterruptOrder[1] == playerGUID then
         blinkingTicker = C_Timer.NewTicker(0.5, function() AZP.InterruptHelper:InterruptBlinking(blinkingBoolean) end, 10)
     else
         AZP.InterruptHelper:InterruptBlinking(false)
@@ -195,10 +294,10 @@ function AZP.InterruptHelper:InterruptBlinking(boolean)
     end
 end
 
-function AZP.InterruptHelper:StructureInterrupts(interruptedName, interruptSpellID)
+function AZP.InterruptHelper:StructureInterrupts(interruptedGUID, interruptSpellID)
     local interuptedIndex = nil
     for i = 1, #AZPInterruptOrder do
-        if AZPInterruptOrder[i] == interruptedName then
+        if AZPInterruptOrder[i] == interruptedGUID then
             interuptedIndex = i
         end
     end
@@ -215,20 +314,71 @@ function AZP.InterruptHelper:StructureInterrupts(interruptedName, interruptSpell
     end
 end
 
-function AZP.InterruptHelper:ShareVersion()
-    local versionString = string.format("|IH:%d|", AZP.VersionControl.InterruptHelper)
-    --DelayedExecution(10, function()
-        if IsInGroup() then
-            if IsInRaid() then
-                C_ChatInfo.SendAddonMessage("AZPVERSIONS", versionString ,"RAID", 1)
-            else
-                C_ChatInfo.SendAddonMessage("AZPVERSIONS", versionString ,"PARTY", 1)
+function AZP.InterruptHelper:ShareInterrupters()
+    local GUIDString = ""
+    for i = 1, #AZPInterruptHelperSettingsList do
+        for j = 1, 40 do
+            if GetRaidRosterInfo(j) ~= nil then             -- For party GetPartyMember(j) ~= nil but this excludes the player.
+                local curGUID = UnitGUID("raid" .. j)
+                if curGUID == AZPInterruptHelperSettingsList[i] then
+                    curGUID = string.match(curGUID, "-(.+)")
+                    GUIDString = GUIDString .. ":" .. curGUID .. ":"
+                end
             end
         end
-        if IsInGuild() then
-            C_ChatInfo.SendAddonMessage("AZPVERSIONS", versionString ,"GUILD", 1)
+    end
+    if IsInGroup() then
+        if IsInRaid() then
+            C_ChatInfo.SendAddonMessage("AZPSHAREINFO", GUIDString ,"RAID", 1)
+        else
+            C_ChatInfo.SendAddonMessage("AZPSHAREINFO", GUIDString ,"PARTY", 1)
         end
-    --end)
+    end
+end
+
+function AZP.InterruptHelper:ReceiveInterrupters(interruptersString)
+    AZPInterruptOrder = {}
+    local pattern = ":([^:]+):"
+    local stringIndex = 1
+    while stringIndex < #interruptersString do
+        local _, endPos = string.find(interruptersString, pattern, stringIndex)
+        local unitGUID = string.match(interruptersString, pattern, stringIndex)
+        unitGUID = "Player-" .. unitGUID
+        stringIndex = endPos + 1
+        AZPInterruptOrder[#AZPInterruptOrder + 1] = unitGUID
+    end
+    for i = 1, #AZPInterruptOrder do
+        for j = 1, 40 do
+            if GetRaidRosterInfo(j) ~= nil then
+                local curName = GetRaidRosterInfo(j)           -- For party GetPartyMember(j) ~= nil but this excludes the player.
+                if string.find(curName, "-") then
+                    curName = string.match(curName, "(.+)-")
+                end
+                local curGUID = UnitGUID("raid" .. j)
+                if curGUID == AZPInterruptOrder[i] then
+                    AZPInterruptHelperGUIDs[i] = curName
+                    AZPInterruptHelperSettingsList[i] = curGUID
+                end
+            end
+        end
+    end
+    AZP.InterruptHelper:PutNamesInList()
+    AZP.InterruptHelper:SaveInterrupts()
+    AZP.InterruptHelper:ChangeFrameHeight()
+end
+
+function AZP.InterruptHelper:ShareVersion()
+    local versionString = string.format("|IH:%d|", AZP.VersionControl.InterruptHelper)
+    if IsInGroup() then
+        if IsInRaid() then
+            C_ChatInfo.SendAddonMessage("AZPVERSIONS", versionString ,"RAID", 1)
+        else
+            C_ChatInfo.SendAddonMessage("AZPVERSIONS", versionString ,"PARTY", 1)
+        end
+    end
+    if IsInGuild() then
+        C_ChatInfo.SendAddonMessage("AZPVERSIONS", versionString ,"GUILD", 1)
+    end
 end
 
 function AZP.InterruptHelper:ReceiveVersion(version)
@@ -261,31 +411,14 @@ end
 
 function AZP.InterruptHelper:OnEvent(self, event, ...)
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
-        local v1, combatEvent, v3, v4, casterName, v6, v7, v8, v9, v10, v11, spellID, v13, v14, v15 = CombatLogGetCurrentEventInfo()
-        -- v12 == SpellID, but not always, sometimes several IDs for one spell (when multiple things happen on one spell)
-        if combatEvent == "SPELL_CAST_SUCCESS" then
-            local unitName, unitRealm = UnitFullName("PLAYER")
-            if AZP.InterruptHelper.interruptSpells[spellID] ~= nil then
-                AZP.InterruptHelper:StructureInterrupts(casterName, spellID)
-                if (casterName == unitName or casterName == unitName .. "-" .. unitRealm) then
-                    if blinkingTicker ~= nil then
-                        blinkingTicker:Cancel()
-                    end
-                    AZP.InterruptHelper:InterruptBlinking(false)
-                end
-            end
-        end
-    elseif event == "PLAYER_ENTERING_WORLD" then
-        AZPInterruptHelperFrame:SetPoint(AZPInterruptHelperLocation[1], AZPInterruptHelperLocation[4], AZPInterruptHelperLocation[5])
+        AZP.InterruptHelper:eventCombatLogEventUnfiltered(...)
     elseif event == "VARIABLES_LOADED" then
-        AZP.InterruptHelper:LoadSavedVars()
-        AZP.InterruptHelper:ShareVersion()
+        AZP.InterruptHelper:eventVariablesLoaded(...)
     elseif event == "CHAT_MSG_ADDON" then
-        local prefix, payload, _, sender = ...
-        if prefix == "AZPVERSIONS" then
-            AZP.InterruptHelper:ReceiveVersion(AZP.InterruptHelper:GetSpecificAddonVersion(payload, "IH"))
-        end
+        AZP.InterruptHelper:eventChatMsgAddon(...)
     end
 end
 
-AZP.InterruptHelper:OnLoad()
+if not IsAddOnLoaded("AzerPUG's Core") then
+    AZP.InterruptHelper:OnLoadSelf()
+end
