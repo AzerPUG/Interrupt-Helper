@@ -25,10 +25,6 @@ local blinkingTicker = nil
 
 local optionHeader = "|cFF00FFFFInterrupt Helper|r"
 
-function AZP.InterruptHelper:VersionControl()
-    return AZP.VersionControl.InterruptHelper
-end
-
 function AZP.InterruptHelper:OnLoadBoth()
     AZP.InterruptHelper:CreateMainFrame()
     C_ChatInfo.RegisterAddonMessagePrefix("AZPSHAREINFO")
