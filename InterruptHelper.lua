@@ -179,6 +179,12 @@ function AZP.InterruptHelper:CreateMainFrame()
     AZPInterruptHelperFrame.text:SetPoint("TOP", 0, -40)
     AZPInterruptHelperFrame.text:SetJustifyV("TOP")
     AZPInterruptHelperFrame.text:SetText("Nothing!")
+
+    
+    local IUAddonFrameCloseButton = CreateFrame("Button", nil, AZPInterruptHelperFrame, "UIPanelCloseButton")
+    IUAddonFrameCloseButton:SetSize(20, 21)
+    IUAddonFrameCloseButton:SetPoint("TOPRIGHT", AZPInterruptHelperFrame, "TOPRIGHT", 2, 2)
+    IUAddonFrameCloseButton:SetScript("OnClick", function() AZPInterruptHelperFrame:Hide() end )
 end
 
 function AZP.InterruptHelper:eventCombatLogEventUnfiltered(...)
@@ -417,4 +423,11 @@ end
 
 if not IsAddOnLoaded("AzerPUG's Core") then
     AZP.InterruptHelper:OnLoadSelf()
+end
+
+SLASH_SHOW1 = "/azpshow"
+SLASH_SHOW2 = "/showazp"
+SlashCmdList["SHOW"] = function()
+    print("Test bla bla ")
+    AZPInterruptHelperFrame:Show()
 end
