@@ -12,16 +12,18 @@ local name = "Interrupt Helper"
 local nameFull = ("AzerPUG's " .. name)
 
 local AZPInterruptHelperFrame, AZPInterruptHelperOptionPanel = nil, nil
-local AZPInterruptOrder, AZPInterruptHelperGUIDs, AZPInterruptOrderEditBoxes, GUIDList = {}, {}, {}, {}
-
+local AZPInterruptOrder, AZPInterruptHelperGUIDs, AZPInterruptOrderEditBoxes, AZPinterruptOrderCooldownBars  = {}, {}, {}, {}
+AZPinterruptOrderCooldowns = {}
 if AZPInterruptHelperSettingsList == nil then AZPInterruptHelperSettingsList = {} end
+
+if AZPIHShownLocked == nil then AZPIHShownLocked = {false, false} end
 
 local InterruptButton = nil
 
 local UpdateFrame = nil
 
 local blinkingBoolean = false
-local blinkingTicker = nil
+local blinkingTicker, cooldownTicker = nil, nil
 
 local optionHeader = "|cFF00FFFFInterrupt Helper|r"
 
@@ -93,16 +95,37 @@ function AZP.InterruptHelper:OnLoadSelf()
 end
 
 function AZP.InterruptHelper:FillOptionsPanel(frameToFill)
-    local ShareButton = CreateFrame("Button", nil, frameToFill, "UIPanelButtonTemplate")
-    ShareButton.text = ShareButton:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    ShareButton.text:SetText("Share List")
-    ShareButton:SetWidth("100")
-    ShareButton:SetHeight("25")
-    ShareButton.text:SetWidth("100")
-    ShareButton.text:SetHeight("15")
-    ShareButton:SetPoint("TOP", 100, -50)
-    ShareButton.text:SetPoint("CENTER", 0, -1)
-    ShareButton:SetScript("OnClick", function() AZP.InterruptHelper:ShareInterrupters() end )
+    frameToFill.LockMoveButton = CreateFrame("Button", nil, frameToFill, "UIPanelButtonTemplate")
+    frameToFill.LockMoveButton:SetSize(100, 25)
+    frameToFill.LockMoveButton:SetPoint("TOP", 100, -50)
+    frameToFill.LockMoveButton:SetText("Share List")
+    frameToFill.LockMoveButton:SetScript("OnClick", function() AZP.InterruptHelper:ShareInterrupters() end )
+
+    frameToFill.LockMoveButton = CreateFrame("Button", nil, frameToFill, "UIPanelButtonTemplate")
+    frameToFill.LockMoveButton:SetSize(100, 25)
+    frameToFill.LockMoveButton:SetPoint("TOP", 100, -100)
+    frameToFill.LockMoveButton:SetText("Lock Interrupts")
+    frameToFill.LockMoveButton:SetScript("OnClick", function ()
+        if AZPInterruptHelperFrame:IsMovable() then
+            AZPInterruptHelperFrame:EnableMouse(false)
+            AZPInterruptHelperFrame:SetMovable(false)
+            frameToFill.LockMoveButton:SetText("Move Interrupts!")
+            AZPIHShownLocked[1] = true
+        else
+            AZPInterruptHelperFrame:EnableMouse(true)
+            AZPInterruptHelperFrame:SetMovable(true)
+            frameToFill.LockMoveButton:SetText("Lock Interrupts")
+            AZPIHShownLocked[1] = false
+        end
+    end)
+
+    frameToFill.ShowHideButton = CreateFrame("Button", nil, frameToFill, "UIPanelButtonTemplate")
+    frameToFill.ShowHideButton:SetSize(100, 25)
+    frameToFill.ShowHideButton:SetPoint("TOP", 100, -150)
+    frameToFill.ShowHideButton:SetText("Hide Interrupts!")
+    frameToFill.ShowHideButton:SetScript("OnClick", function () AZP.InterruptHelper:ShowHideFrame() end)
+
+    frameToFill:Hide()
 
     for i = 1, 10 do
         local interruptersFrame = CreateFrame("Frame", nil, frameToFill)
@@ -158,6 +181,8 @@ function AZP.InterruptHelper:CreateMainFrame()
     AZPInterruptHelperFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     AZPInterruptHelperFrame:RegisterEvent("VARIABLES_LOADED")
     AZPInterruptHelperFrame:RegisterEvent("CHAT_MSG_ADDON")
+    AZPInterruptHelperFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
+    AZPInterruptHelperFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
     AZPInterruptHelperFrame:SetScript("OnEvent", function(...) AZP.InterruptHelper:OnEvent(...) end)
     AZPInterruptHelperFrame:SetSize(200, 200)
     AZPInterruptHelperFrame:SetBackdrop({
@@ -172,7 +197,7 @@ function AZP.InterruptHelper:CreateMainFrame()
     AZPInterruptHelperFrame.header:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
     AZPInterruptHelperFrame.header:SetPoint("TOP", 0, -10)
     AZPInterruptHelperFrame.header:SetJustifyV("TOP")
-    AZPInterruptHelperFrame.header:SetText("Nothing!")
+    AZPInterruptHelperFrame.header:SetText("Interrupt Order!")
 
     AZPInterruptHelperFrame.text = AZPInterruptHelperFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     AZPInterruptHelperFrame.text:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
@@ -180,11 +205,33 @@ function AZP.InterruptHelper:CreateMainFrame()
     AZPInterruptHelperFrame.text:SetJustifyV("TOP")
     AZPInterruptHelperFrame.text:SetText("Nothing!")
 
-    
     local IUAddonFrameCloseButton = CreateFrame("Button", nil, AZPInterruptHelperFrame, "UIPanelCloseButton")
     IUAddonFrameCloseButton:SetSize(20, 21)
     IUAddonFrameCloseButton:SetPoint("TOPRIGHT", AZPInterruptHelperFrame, "TOPRIGHT", 2, 2)
-    IUAddonFrameCloseButton:SetScript("OnClick", function() AZPInterruptHelperFrame:Hide() end )
+    IUAddonFrameCloseButton:SetScript("OnClick", function() AZP.InterruptHelper:ShowHideFrame() end )
+
+    for i = 1, 10 do
+        AZPinterruptOrderCooldownBars[i] = CreateFrame("StatusBar", nil, AZPInterruptHelperFrame)
+        AZPinterruptOrderCooldownBars[i]:SetSize(AZPInterruptHelperFrame:GetWidth() - 20, 18)
+        AZPinterruptOrderCooldownBars[i]:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
+        AZPinterruptOrderCooldownBars[i]:SetPoint("TOP", 0, -20 * i - 25)
+        AZPinterruptOrderCooldownBars[i]:SetMinMaxValues(0, 100)
+        AZPinterruptOrderCooldownBars[i]:SetValue(100)
+        AZPinterruptOrderCooldownBars[i].name = AZPinterruptOrderCooldownBars[i]:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+        AZPinterruptOrderCooldownBars[i].name:SetSize(AZPinterruptOrderCooldownBars[i]:GetWidth() - 25, 16)
+        AZPinterruptOrderCooldownBars[i].name:SetPoint("CENTER", 0, -1)
+        AZPinterruptOrderCooldownBars[i].name:SetText("charName")
+        AZPinterruptOrderCooldownBars[i].bg = AZPinterruptOrderCooldownBars[i]:CreateTexture(nil, "BACKGROUND")
+        AZPinterruptOrderCooldownBars[i].bg:SetTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
+        AZPinterruptOrderCooldownBars[i].bg:SetAllPoints(true)
+        AZPinterruptOrderCooldownBars[i].bg:SetVertexColor(1, 0, 0)
+        AZPinterruptOrderCooldownBars[i].cooldown = AZPinterruptOrderCooldownBars[i]:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+        AZPinterruptOrderCooldownBars[i].cooldown:SetSize(25, 16)
+        AZPinterruptOrderCooldownBars[i].cooldown:SetPoint("RIGHT", -5, 0)
+        AZPinterruptOrderCooldownBars[i].cooldown:SetText("-")
+        AZPinterruptOrderCooldownBars[i]:SetStatusBarColor(0, 0.75, 1)
+        AZPinterruptOrderCooldownBars[i]:Hide()
+    end
 end
 
 function AZP.InterruptHelper:eventCombatLogEventUnfiltered(...)
@@ -230,6 +277,36 @@ function AZP.InterruptHelper:LoadSavedVars()
     AZP.InterruptHelper:PutNamesInList()
     AZP.InterruptHelper:SaveInterrupts()
     AZP.InterruptHelper:ChangeFrameHeight()
+
+    if AZPIHShownLocked[1] then
+        AZPInterruptHelperOptionPanel.LockMoveButton:SetText("Move Interrupts!")
+        AZPInterruptHelperFrame:EnableMouse(false)
+        AZPInterruptHelperFrame:SetMovable(false)
+    else
+        AZPInterruptHelperOptionPanel.LockMoveButton:SetText("Lock Interrupts!")
+        AZPInterruptHelperFrame:EnableMouse(true)
+        AZPInterruptHelperFrame:SetMovable(true)
+    end
+
+    if AZPIHShownLocked[2] then
+        AZPInterruptHelperFrame:Hide()
+        AZPInterruptHelperOptionPanel.ShowHideButton:SetText("Show Interrupts!")
+    else
+        AZPInterruptHelperFrame:Show()
+        AZPInterruptHelperOptionPanel.ShowHideButton:SetText("Hide Interrupts!")
+    end
+end
+
+function AZP.InterruptHelper:ShowHideFrame()
+    if AZPInterruptHelperFrame:IsShown() then
+        AZPInterruptHelperFrame:Hide()
+        AZPInterruptHelperOptionPanel.ShowHideButton:SetText("Show Interrupts!")
+        AZPIHShownLocked[2] = true
+    else
+        AZPInterruptHelperFrame:Show()
+        AZPInterruptHelperOptionPanel.ShowHideButton:SetText("Hide Interrupts!")
+        AZPIHShownLocked[2] = false
+    end
 end
 
 function AZP.InterruptHelper:PutNamesInList()
@@ -261,19 +338,35 @@ function AZP.InterruptHelper:SaveLocation()
 end
 
 function AZP.InterruptHelper:ChangeFrameHeight()
-    AZPInterruptHelperFrame:SetHeight(#AZPInterruptOrder * 15 + 50)
+    AZPInterruptHelperFrame:SetHeight(#AZPInterruptOrder * 15 + 65)
+end
+
+function AZP.InterruptHelper:TickCoolDowns()
+    for i = 1, #AZPinterruptOrderCooldownBars do
+        if AZPinterruptOrderCooldowns[i] ~= nil then
+            if AZPinterruptOrderCooldowns[i] <= 0 then
+                AZPinterruptOrderCooldowns[i] = nil
+                AZPinterruptOrderCooldownBars[i].cooldown:SetText("-")
+                AZPinterruptOrderCooldownBars[i]:SetMinMaxValues(0, 100)
+                AZPinterruptOrderCooldownBars[i]:SetValue(100)
+            else
+                AZPinterruptOrderCooldowns[i] = AZPinterruptOrderCooldowns[i] - 1
+                AZPinterruptOrderCooldownBars[i].cooldown:SetText(AZPinterruptOrderCooldowns[i])
+                AZPinterruptOrderCooldownBars[i]:SetValue(AZPinterruptOrderCooldowns[i])
+            end
+        end
+    end
 end
 
 function AZP.InterruptHelper:SaveInterrupts()
-    local InterruptFrameHeader = "Interrupt Order:\n"
     local InterruptOrderText = ""
     for i = 1, 10 do
+        AZPinterruptOrderCooldownBars[i]:Hide()
         if AZPInterruptOrder[i] ~= nil then
-            local temp = AZPInterruptHelperGUIDs[AZPInterruptOrder[i]]
-            InterruptOrderText = InterruptOrderText .. temp .. "\n"
+            AZPinterruptOrderCooldownBars[i].name:SetText(AZPInterruptHelperGUIDs[AZPInterruptOrder[i]])
+            AZPinterruptOrderCooldownBars[i]:Show()
         end
     end
-    AZPInterruptHelperFrame.header:SetText(InterruptFrameHeader)
     AZPInterruptHelperFrame.text:SetText(InterruptOrderText)
 
     local playerGUID = UnitGUID("player")
@@ -304,16 +397,31 @@ function AZP.InterruptHelper:StructureInterrupts(interruptedGUID, interruptSpell
         end
     end
 
-    if interuptedIndex ~= nill then
-        local temp = AZPInterruptOrder[interuptedIndex]
+    local spellCooldown = AZP.InterruptHelper:GetSpellCooldown(interruptSpellID)
+    AZPinterruptOrderCooldowns[interuptedIndex] = spellCooldown
+    AZPinterruptOrderCooldownBars[interuptedIndex]:SetMinMaxValues(0, spellCooldown)
+    AZPinterruptOrderCooldownBars[interuptedIndex].cooldown:SetText(spellCooldown)
 
-        for i = interuptedIndex, #AZPInterruptOrder - 1 do      -- InterruptedIndex == nil if some one interrupts not in the list.
-            AZPInterruptOrder[i] = AZPInterruptOrder[i+1]
-        end
-        AZPInterruptOrder[#AZPInterruptOrder] = temp
+    local temp = AZPInterruptOrder[interuptedIndex]
+    local temp2 = AZPinterruptOrderCooldownBars[interuptedIndex]
+    local temp3 = AZPinterruptOrderCooldowns[interuptedIndex]
 
-        AZP.InterruptHelper:SaveInterrupts()
+    for i = interuptedIndex, #AZPInterruptOrder - 1 do
+        AZPInterruptOrder[i] = AZPInterruptOrder[i+1]
+        AZPinterruptOrderCooldownBars[i] = AZPinterruptOrderCooldownBars[i+1]
+        AZPinterruptOrderCooldowns[i] = AZPinterruptOrderCooldowns[i+1]
+        AZPinterruptOrderCooldownBars[i]:SetPoint("TOP", 0, -20 * i - 25)
     end
+    AZPInterruptOrder[#AZPInterruptOrder] = temp
+    AZPinterruptOrderCooldownBars[#AZPInterruptOrder] = temp2
+    AZPinterruptOrderCooldowns[#AZPInterruptOrder] = temp3
+    AZPinterruptOrderCooldownBars[#AZPInterruptOrder]:SetPoint("TOP", 0, -20 * #AZPInterruptOrder - 25)
+
+    AZP.InterruptHelper:SaveInterrupts()
+end
+
+function AZP.InterruptHelper:GetSpellCooldown(interruptSpellID)
+    return AZP.InterruptHelper.interruptSpells[interruptSpellID][4]
 end
 
 function AZP.InterruptHelper:ShareInterrupters()
@@ -418,6 +526,10 @@ function AZP.InterruptHelper:OnEvent(self, event, ...)
         AZP.InterruptHelper:eventVariablesLoaded(...)
     elseif event == "CHAT_MSG_ADDON" then
         AZP.InterruptHelper:eventChatMsgAddon(...)
+    elseif event == "PLAYER_ENTER_COMBAT" then
+        cooldownTicker = C_Timer.NewTicker(1, function() AZP.InterruptHelper:TickCoolDowns() end, 1000)
+    elseif event == "PLAYER_LEAVE_COMBAT" then
+        cooldownTicker:Cancel()
     end
 end
 
@@ -425,9 +537,7 @@ if not IsAddOnLoaded("AzerPUG's Core") then
     AZP.InterruptHelper:OnLoadSelf()
 end
 
-SLASH_SHOW1 = "/azpshow"
-SLASH_SHOW2 = "/showazp"
-SlashCmdList["SHOW"] = function()
-    print("Test bla bla ")
-    AZPInterruptHelperFrame:Show()
+SLASH_IHSHOW1 = "/azpih"
+SlashCmdList["IHSHOW"] = function()
+    AZP.InterruptHelper:ShowHideFrame()
 end
