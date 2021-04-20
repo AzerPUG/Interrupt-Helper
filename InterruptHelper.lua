@@ -37,7 +37,10 @@ function AZP.InterruptHelper:OnLoadCore()
     AZP.Core:RegisterEvents("COMBAT_LOG_EVENT_UNFILTERED", function(...) AZP.InterruptHelper:eventCombatLogEventUnfiltered(...) end)
     AZP.Core:RegisterEvents("VARIABLES_LOADED", function(...) AZP.InterruptHelper:eventVariablesLoaded(...) end)
     AZP.Core:RegisterEvents("CHAT_MSG_ADDON", function(...) AZP.InterruptHelper:eventChatMsgAddon(...) end)
-    AZP.OptionsPanels:Generic("Interrupt Helper", optionHeader, function(frame) AZP.InterruptHelper:FillOptionsPanel(frame) end)
+    AZP.OptionsPanels:Generic("Interrupt Helper", optionHeader, function(frame) 
+        AZPInterruptHelperOptionPanel = frame
+        AZP.InterruptHelper:FillOptionsPanel(frame)
+    end)
 end
 
 function AZP.InterruptHelper:OnLoadSelf()
