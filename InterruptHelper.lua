@@ -540,7 +540,8 @@ if not IsAddOnLoaded("AzerPUG's Core") then
     AZP.InterruptHelper:OnLoadSelf()
 end
 
-SLASH_IHSHOW1 = "/azpih"
-SlashCmdList["IHSHOW"] = function()
+AZP.SlashCommands["ih"] = function ()
     AZP.InterruptHelper:ShowHideFrame()
 end
+-- Aliases
+AZP.SlashCommands["interrupt helper"] = AZP.SlashCommands["ih"]

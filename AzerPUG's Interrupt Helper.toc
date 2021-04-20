@@ -7,4 +7,5 @@
 ## SavedVariables: AZPInterruptHelperLocation, AZPInterruptHelperSettingsList, AZPIHShownLocked
 
 dataTables.lua
+SlashCommands.lua
 InterruptHelper.lua
