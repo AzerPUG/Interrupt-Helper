@@ -67,7 +67,7 @@ function AZP.InterruptHelper:OnLoadSelf()
     AZP.InterruptHelper:OnLoadBoth()
 
     if AZPInterruptHelperLocation == nil then
-        AZPInterruptHelperLocation = {"CENTER", 200, -200}
+        AZPInterruptHelperLocation = {"CENTER", nil, nil, 200, -200}
     end
 
     UpdateFrame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
