@@ -1,3 +1,6 @@
+-- Event Frame
+-- Self vs Core Frame
+
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 if AZP.OnLoad == nil then AZP.OnLoad = {} end
@@ -19,8 +22,8 @@ if AZPInterruptHelperSettingsList == nil then AZPInterruptHelperSettingsList = {
 if AZPIHShownLocked == nil then AZPIHShownLocked = {false, false} end
 
 local InterruptButton = nil
-
 local UpdateFrame = nil
+local HaveShowedUpdateNotification = false
 
 local blinkingBoolean = false
 local blinkingTicker, cooldownTicker = nil, nil
@@ -327,9 +330,11 @@ function AZP.InterruptHelper:PutNamesInList()
                     end
                 end
             end
-            local temp = AZPInterruptHelperGUIDs[AZPInterruptHelperSettingsList[i]]
-            AZPInterruptOrderEditBoxes[i].editbox:SetText(temp)
-            AZPInterruptOrder[i] = AZPInterruptHelperSettingsList[i]
+            if AZPInterruptHelperGUIDs[AZPInterruptHelperSettingsList[i]] ~= nil then
+                local temp = AZPInterruptHelperGUIDs[AZPInterruptHelperSettingsList[i]]
+                AZPInterruptOrderEditBoxes[i].editbox:SetText(temp)
+                AZPInterruptOrder[i] = AZPInterruptHelperSettingsList[i]
+            end
         end
     end
 end
