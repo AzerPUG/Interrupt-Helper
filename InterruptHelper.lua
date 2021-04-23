@@ -39,8 +39,8 @@ function AZP.InterruptHelper:OnLoadCore()
     AZP.InterruptHelper:OnLoadBoth()
     AZP.Core:RegisterEvents("COMBAT_LOG_EVENT_UNFILTERED", function(...) AZP.InterruptHelper:eventCombatLogEventUnfiltered(...) end)
     AZP.Core:RegisterEvents("VARIABLES_LOADED", function(...) AZP.InterruptHelper:eventVariablesLoaded(...) end)
-    AZP.Core:RegisterEvents("CHAT_MSG_ADDON", function(...) AZP.InterruptHelper:eventChatMsgAddon(...) end)
-    AZP.OptionsPanels:Generic("Interrupt Helper", optionHeader, function(frame) 
+    AZP.Core:RegisterEvents("CHAT_MSG_ADDON", function(...) AZP.InterruptHelper:eventChatMsgAddonInterrupts(...) end)
+    AZP.OptionsPanels:Generic("Interrupt Helper", optionHeader, function(frame)
         AZPInterruptHelperOptionPanel = frame
         AZP.InterruptHelper:FillOptionsPanel(frame)
     end)
@@ -266,15 +266,20 @@ function AZP.InterruptHelper:eventVariablesLoaded(...)
     AZP.InterruptHelper:ShareVersion()
 end
 
-function AZP.InterruptHelper:eventChatMsgAddon(...)
+function AZP.InterruptHelper:eventChatMsgAddonInterrupts(...)
+    local prefix, payload, _, sender = ...
+    if prefix == "AZPSHAREINFO" then
+        AZP.InterruptHelper:ReceiveInterrupters(payload)
+    end
+end
+
+function AZP.InterruptHelper:eventChatMsgAddonVersion(...)
     local prefix, payload, _, sender = ...
     if prefix == "AZPVERSIONS" then
         local version = AZP.InterruptHelper:GetSpecificAddonVersion(payload, "IH")
         if version ~= nil then
             AZP.InterruptHelper:ReceiveVersion(version)
         end
-    elseif prefix == "AZPSHAREINFO" then
-        AZP.InterruptHelper:ReceiveInterrupters(payload)
     end
 end
 
@@ -533,7 +538,8 @@ function AZP.InterruptHelper:OnEvent(self, event, ...)
     elseif event == "VARIABLES_LOADED" then
         AZP.InterruptHelper:eventVariablesLoaded(...)
     elseif event == "CHAT_MSG_ADDON" then
-        AZP.InterruptHelper:eventChatMsgAddon(...)
+        AZP.InterruptHelper:eventChatMsgAddonVersion(...)
+        AZP.InterruptHelper:eventChatMsgAddonInterrupts(...)
     elseif event == "PLAYER_ENTER_COMBAT" then
         cooldownTicker = C_Timer.NewTicker(1, function() AZP.InterruptHelper:TickCoolDowns() end, 1000)
     elseif event == "PLAYER_LEAVE_COMBAT" then
