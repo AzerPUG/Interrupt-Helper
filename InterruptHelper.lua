@@ -7,12 +7,8 @@ if AZP.OnLoad == nil then AZP.OnLoad = {} end
 if AZP.OnEvent == nil then AZP.OnEvent = {} end
 if AZP.OnEvent == nil then AZP.OnEvent = {} end
 
-AZP.VersionControl.InterruptHelper = 3
+AZP.VersionControl["Interrupt Helper"] = 4
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
-
-local dash = " - "
-local name = "Interrupt Helper"
-local nameFull = ("AzerPUG's " .. name)
 
 local AZPInterruptHelperFrame, AZPInterruptHelperOptionPanel = nil, nil
 local AZPInterruptOrder, AZPInterruptHelperGUIDs, AZPInterruptOrderEditBoxes, AZPinterruptOrderCooldownBars  = {}, {}, {}, {}
@@ -21,8 +17,7 @@ if AZPInterruptHelperSettingsList == nil then AZPInterruptHelperSettingsList = {
 
 if AZPIHShownLocked == nil then AZPIHShownLocked = {false, false} end
 
-local InterruptButton = nil
-local UpdateFrame = nil
+local UpdateFrame, EventFrame = nil, nil
 local HaveShowedUpdateNotification = false
 
 local blinkingBoolean = false
@@ -40,6 +35,10 @@ function AZP.InterruptHelper:OnLoadCore()
     AZP.Core:RegisterEvents("COMBAT_LOG_EVENT_UNFILTERED", function(...) AZP.InterruptHelper:eventCombatLogEventUnfiltered(...) end)
     AZP.Core:RegisterEvents("VARIABLES_LOADED", function(...) AZP.InterruptHelper:eventVariablesLoaded(...) end)
     AZP.Core:RegisterEvents("CHAT_MSG_ADDON", function(...) AZP.InterruptHelper:eventChatMsgAddonInterrupts(...) end)
+    AZP.Core:RegisterEvents("PLAYER_ENTER_COMBAT", function(...) AZP.InterruptHelper:eventPlayerEnterCombat(...) end)
+    AZP.Core:RegisterEvents("PLAYER_LEAVE_COMBAT", function(...) AZP.InterruptHelper:eventPlayerLeaveCombat(...) end)
+
+    AZP.OptionsPanels:RemovePanel("Interrupt Helper")
     AZP.OptionsPanels:Generic("Interrupt Helper", optionHeader, function(frame)
         AZPInterruptHelperOptionPanel = frame
         AZP.InterruptHelper:FillOptionsPanel(frame)
@@ -48,6 +47,15 @@ end
 
 function AZP.InterruptHelper:OnLoadSelf()
     C_ChatInfo.RegisterAddonMessagePrefix("AZPVERSIONS")
+
+    EventFrame = CreateFrame("FRAME", nil)
+    EventFrame:RegisterEvent("CHAT_MSG_ADDON")
+    EventFrame:RegisterEvent("VARIABLES_LOADED")
+    EventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+    EventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    EventFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
+    EventFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
+    EventFrame:SetScript("OnEvent", function(...) AZP.InterruptHelper:OnEvent(...) end)
 
     AZPInterruptHelperOptionPanel = CreateFrame("FRAME", nil)
     AZPInterruptHelperOptionPanel.name = "|cFF00FFFFAzerPUG's Interrupt Helper|r"
@@ -184,11 +192,6 @@ function AZP.InterruptHelper:CreateMainFrame()
     AZPInterruptHelperFrame:RegisterForDrag("LeftButton")
     AZPInterruptHelperFrame:SetScript("OnDragStart", AZPInterruptHelperFrame.StartMoving)
     AZPInterruptHelperFrame:SetScript("OnDragStop", function() AZPInterruptHelperFrame:StopMovingOrSizing() AZP.InterruptHelper:SaveLocation() end)
-    AZPInterruptHelperFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-    AZPInterruptHelperFrame:RegisterEvent("VARIABLES_LOADED")
-    AZPInterruptHelperFrame:RegisterEvent("CHAT_MSG_ADDON")
-    AZPInterruptHelperFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
-    AZPInterruptHelperFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
     AZPInterruptHelperFrame:SetScript("OnEvent", function(...) AZP.InterruptHelper:OnEvent(...) end)
     AZPInterruptHelperFrame:SetSize(200, 200)
     AZPInterruptHelperFrame:SetBackdrop({
@@ -281,6 +284,14 @@ function AZP.InterruptHelper:eventChatMsgAddonVersion(...)
             AZP.InterruptHelper:ReceiveVersion(version)
         end
     end
+end
+
+function AZP.InterruptHelper:eventPlayerEnterCombat()
+    cooldownTicker = C_Timer.NewTicker(1, function() AZP.InterruptHelper:TickCoolDowns() end, 1000)
+end
+
+function AZP.InterruptHelper:eventPlayerLeaveCombat()
+    cooldownTicker:Cancel()
 end
 
 function AZP.InterruptHelper:LoadSavedVars()
@@ -491,7 +502,7 @@ function AZP.InterruptHelper:ReceiveInterrupters(interruptersString)
 end
 
 function AZP.InterruptHelper:ShareVersion()
-    local versionString = string.format("|IH:%d|", AZP.VersionControl.InterruptHelper)
+    local versionString = string.format("|IH:%d|", AZP.VersionControl["Interrupt Helper"])
     if IsInGroup() then
         if IsInRaid() then
             C_ChatInfo.SendAddonMessage("AZPVERSIONS", versionString ,"RAID", 1)
@@ -505,7 +516,7 @@ function AZP.InterruptHelper:ShareVersion()
 end
 
 function AZP.InterruptHelper:ReceiveVersion(version)
-    if version > AZP.VersionControl.InterruptHelper then
+    if version > AZP.VersionControl["Interrupt Helper"] then
         if (not HaveShowedUpdateNotification) then
             HaveShowedUpdateNotification = true
             UpdateFrame:Show()
@@ -513,7 +524,7 @@ function AZP.InterruptHelper:ReceiveVersion(version)
                 "Please download the new version through the CurseForge app.\n" ..
                 "Or use the CurseForge website to download it manually!\n\n" .. 
                 "Newer Version: v" .. version .. "\n" .. 
-                "Your version: v" .. AZP.VersionControl.InterruptHelper
+                "Your version: v" .. AZP.VersionControl["Interrupt Helper"]
             )
         end
     end
@@ -541,9 +552,11 @@ function AZP.InterruptHelper:OnEvent(self, event, ...)
         AZP.InterruptHelper:eventChatMsgAddonVersion(...)
         AZP.InterruptHelper:eventChatMsgAddonInterrupts(...)
     elseif event == "PLAYER_ENTER_COMBAT" then
-        cooldownTicker = C_Timer.NewTicker(1, function() AZP.InterruptHelper:TickCoolDowns() end, 1000)
+        AZP.InterruptHelper:eventPlayerEnterCombat()
     elseif event == "PLAYER_LEAVE_COMBAT" then
-        cooldownTicker:Cancel()
+        AZP.InterruptHelper:eventPlayerLeaveCombat()
+    elseif event == "GROUP_ROSTER_UPDATE" then
+        AZP.InterruptHelper:ShareVersion()
     end
 end
 
