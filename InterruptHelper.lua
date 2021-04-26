@@ -1,18 +1,12 @@
--- Event Frame
--- Self vs Core Frame
-
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
-if AZP.OnLoad == nil then AZP.OnLoad = {} end
-if AZP.OnEvent == nil then AZP.OnEvent = {} end
-if AZP.OnEvent == nil then AZP.OnEvent = {} end
 
 AZP.VersionControl["Interrupt Helper"] = 4
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local AZPInterruptHelperFrame, AZPInterruptHelperOptionPanel = nil, nil
 local AZPInterruptOrder, AZPInterruptHelperGUIDs, AZPInterruptOrderEditBoxes, AZPinterruptOrderCooldownBars  = {}, {}, {}, {}
-AZPinterruptOrderCooldowns = {}
+local AZPinterruptOrderCooldowns = {}
 if AZPInterruptHelperSettingsList == nil then AZPInterruptHelperSettingsList = {} end
 
 if AZPIHShownLocked == nil then AZPIHShownLocked = {false, false} end
