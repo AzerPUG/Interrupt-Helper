@@ -554,7 +554,7 @@ function AZP.InterruptHelper:OnEvent(self, event, ...)
     end
 end
 
-if not IsAddOnLoaded("AzerPUG's Core") then
+if not IsAddOnLoaded("AzerPUGsCore") then
     AZP.InterruptHelper:OnLoadSelf()
 end
 
