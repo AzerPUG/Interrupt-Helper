@@ -17,7 +17,7 @@ AzerPUG's Interrupt Helper creates a frame in which several people can easily be
 Soon™ the list will contain cooldown bars, as well as order based on longer / shorter cooldown.
 
 # Bugs, Errors, Glitches and Requests.
-If you find any of the above, please do not hessitate to create a GitHub Issue here: https://github.com/AzerPUG/Interrupt-Helper/issues  
+If you find any of the above, please do not hesitate to create a GitHub Issue here: https://github.com/AzerPUG/Interrupt-Helper/issues  
 Or you can join our Discord and let us know in the AzerTech channel: http://www.azerpug.com/discord  
 Please note that our Discord Verification level prevents new people from talking/commenting/ranking in the first 10 minutes!
 
