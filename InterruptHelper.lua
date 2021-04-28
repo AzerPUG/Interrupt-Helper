@@ -1,10 +1,10 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 5
+AZP.VersionControl["Interrupt Helper"] = 6
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
-local AZPInterruptHelperFrame, AZPInterruptHelperOptionPanel = nil, nil
+local AZPIHSelfFrame, AZPInterruptHelperOptionPanel = nil, nil
 local AZPInterruptOrder, AZPInterruptHelperGUIDs, AZPInterruptOrderEditBoxes, AZPinterruptOrderCooldownBars  = {}, {}, {}, {}
 local AZPinterruptOrderCooldowns = {}
 if AZPInterruptHelperSettingsList == nil then AZPInterruptHelperSettingsList = {} end
@@ -114,14 +114,14 @@ function AZP.InterruptHelper:FillOptionsPanel(frameToFill)
     frameToFill.LockMoveButton:SetPoint("TOP", 100, -100)
     frameToFill.LockMoveButton:SetText("Lock Interrupts")
     frameToFill.LockMoveButton:SetScript("OnClick", function ()
-        if AZPInterruptHelperFrame:IsMovable() then
-            AZPInterruptHelperFrame:EnableMouse(false)
-            AZPInterruptHelperFrame:SetMovable(false)
+        if AZPIHSelfFrame:IsMovable() then
+            AZPIHSelfFrame:EnableMouse(false)
+            AZPIHSelfFrame:SetMovable(false)
             frameToFill.LockMoveButton:SetText("Move Interrupts!")
             AZPIHShownLocked[1] = true
         else
-            AZPInterruptHelperFrame:EnableMouse(true)
-            AZPInterruptHelperFrame:SetMovable(true)
+            AZPIHSelfFrame:EnableMouse(true)
+            AZPIHSelfFrame:SetMovable(true)
             frameToFill.LockMoveButton:SetText("Lock Interrupts")
             AZPIHShownLocked[1] = false
         end
@@ -180,42 +180,42 @@ function AZP.InterruptHelper:FillOptionsPanel(frameToFill)
 end
 
 function AZP.InterruptHelper:CreateMainFrame()
-    AZPInterruptHelperFrame = CreateFrame("FRAME", nil, UIParent, "BackdropTemplate")
-    AZPInterruptHelperFrame:EnableMouse(true)
-    AZPInterruptHelperFrame:SetMovable(true)
-    AZPInterruptHelperFrame:RegisterForDrag("LeftButton")
-    AZPInterruptHelperFrame:SetScript("OnDragStart", AZPInterruptHelperFrame.StartMoving)
-    AZPInterruptHelperFrame:SetScript("OnDragStop", function() AZPInterruptHelperFrame:StopMovingOrSizing() AZP.InterruptHelper:SaveLocation() end)
-    AZPInterruptHelperFrame:SetScript("OnEvent", function(...) AZP.InterruptHelper:OnEvent(...) end)
-    AZPInterruptHelperFrame:SetSize(200, 200)
-    AZPInterruptHelperFrame:SetBackdrop({
+    AZPIHSelfFrame = CreateFrame("FRAME", nil, UIParent, "BackdropTemplate")
+    AZPIHSelfFrame:EnableMouse(true)
+    AZPIHSelfFrame:SetMovable(true)
+    AZPIHSelfFrame:RegisterForDrag("LeftButton")
+    AZPIHSelfFrame:SetScript("OnDragStart", AZPIHSelfFrame.StartMoving)
+    AZPIHSelfFrame:SetScript("OnDragStop", function() AZPIHSelfFrame:StopMovingOrSizing() AZP.InterruptHelper:SaveLocation() end)
+    AZPIHSelfFrame:SetScript("OnEvent", function(...) AZP.InterruptHelper:OnEvent(...) end)
+    AZPIHSelfFrame:SetSize(200, 200)
+    AZPIHSelfFrame:SetBackdrop({
         bgFile = "Interface/Tooltips/UI-Tooltip-Background",
         edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
         edgeSize = 24,
         insets = { left = 5, right = 5, top = 5, bottom = 5 },
     })
-    AZPInterruptHelperFrame:SetBackdropColor(0.5, 0.5, 0.5, 0.75)
-    AZPInterruptHelperFrame:SetBackdropBorderColor(1, 1, 1, 1)
-    AZPInterruptHelperFrame.header = AZPInterruptHelperFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
-    AZPInterruptHelperFrame.header:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
-    AZPInterruptHelperFrame.header:SetPoint("TOP", 0, -10)
-    AZPInterruptHelperFrame.header:SetJustifyV("TOP")
-    AZPInterruptHelperFrame.header:SetText("Interrupt Order!")
+    AZPIHSelfFrame:SetBackdropColor(0.5, 0.5, 0.5, 0.75)
+    AZPIHSelfFrame:SetBackdropBorderColor(1, 1, 1, 1)
+    AZPIHSelfFrame.header = AZPIHSelfFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalHuge")
+    AZPIHSelfFrame.header:SetSize(AZPIHSelfFrame:GetWidth(), AZPIHSelfFrame:GetHeight())
+    AZPIHSelfFrame.header:SetPoint("TOP", 0, -10)
+    AZPIHSelfFrame.header:SetJustifyV("TOP")
+    AZPIHSelfFrame.header:SetText("Interrupt Order!")
 
-    AZPInterruptHelperFrame.text = AZPInterruptHelperFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    AZPInterruptHelperFrame.text:SetSize(AZPInterruptHelperFrame:GetWidth(), AZPInterruptHelperFrame:GetHeight())
-    AZPInterruptHelperFrame.text:SetPoint("TOP", 0, -40)
-    AZPInterruptHelperFrame.text:SetJustifyV("TOP")
-    AZPInterruptHelperFrame.text:SetText("Nothing!")
+    AZPIHSelfFrame.text = AZPIHSelfFrame:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+    AZPIHSelfFrame.text:SetSize(AZPIHSelfFrame:GetWidth(), AZPIHSelfFrame:GetHeight())
+    AZPIHSelfFrame.text:SetPoint("TOP", 0, -40)
+    AZPIHSelfFrame.text:SetJustifyV("TOP")
+    AZPIHSelfFrame.text:SetText("Nothing!")
 
-    local IUAddonFrameCloseButton = CreateFrame("Button", nil, AZPInterruptHelperFrame, "UIPanelCloseButton")
+    local IUAddonFrameCloseButton = CreateFrame("Button", nil, AZPIHSelfFrame, "UIPanelCloseButton")
     IUAddonFrameCloseButton:SetSize(20, 21)
-    IUAddonFrameCloseButton:SetPoint("TOPRIGHT", AZPInterruptHelperFrame, "TOPRIGHT", 2, 2)
+    IUAddonFrameCloseButton:SetPoint("TOPRIGHT", AZPIHSelfFrame, "TOPRIGHT", 2, 2)
     IUAddonFrameCloseButton:SetScript("OnClick", function() AZP.InterruptHelper:ShowHideFrame() end )
 
     for i = 1, 10 do
-        AZPinterruptOrderCooldownBars[i] = CreateFrame("StatusBar", nil, AZPInterruptHelperFrame)
-        AZPinterruptOrderCooldownBars[i]:SetSize(AZPInterruptHelperFrame:GetWidth() - 20, 18)
+        AZPinterruptOrderCooldownBars[i] = CreateFrame("StatusBar", nil, AZPIHSelfFrame)
+        AZPinterruptOrderCooldownBars[i]:SetSize(AZPIHSelfFrame:GetWidth() - 20, 18)
         AZPinterruptOrderCooldownBars[i]:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
         AZPinterruptOrderCooldownBars[i]:SetPoint("TOP", 0, -20 * i - 25)
         AZPinterruptOrderCooldownBars[i]:SetMinMaxValues(0, 100)
@@ -289,37 +289,37 @@ function AZP.InterruptHelper:eventPlayerLeaveCombat()
 end
 
 function AZP.InterruptHelper:LoadSavedVars()
-    AZPInterruptHelperFrame:SetPoint(AZPInterruptHelperLocation[1], AZPInterruptHelperLocation[4], AZPInterruptHelperLocation[5])
+    AZPIHSelfFrame:SetPoint(AZPInterruptHelperLocation[1], AZPInterruptHelperLocation[4], AZPInterruptHelperLocation[5])
     AZP.InterruptHelper:PutNamesInList()
     AZP.InterruptHelper:SaveInterrupts()
     AZP.InterruptHelper:ChangeFrameHeight()
 
     if AZPIHShownLocked[1] then
         AZPInterruptHelperOptionPanel.LockMoveButton:SetText("Move Interrupts!")
-        AZPInterruptHelperFrame:EnableMouse(false)
-        AZPInterruptHelperFrame:SetMovable(false)
+        AZPIHSelfFrame:EnableMouse(false)
+        AZPIHSelfFrame:SetMovable(false)
     else
         AZPInterruptHelperOptionPanel.LockMoveButton:SetText("Lock Interrupts!")
-        AZPInterruptHelperFrame:EnableMouse(true)
-        AZPInterruptHelperFrame:SetMovable(true)
+        AZPIHSelfFrame:EnableMouse(true)
+        AZPIHSelfFrame:SetMovable(true)
     end
 
     if AZPIHShownLocked[2] then
-        AZPInterruptHelperFrame:Hide()
+        AZPIHSelfFrame:Hide()
         AZPInterruptHelperOptionPanel.ShowHideButton:SetText("Show Interrupts!")
     else
-        AZPInterruptHelperFrame:Show()
+        AZPIHSelfFrame:Show()
         AZPInterruptHelperOptionPanel.ShowHideButton:SetText("Hide Interrupts!")
     end
 end
 
 function AZP.InterruptHelper:ShowHideFrame()
-    if AZPInterruptHelperFrame:IsShown() then
-        AZPInterruptHelperFrame:Hide()
+    if AZPIHSelfFrame:IsShown() then
+        AZPIHSelfFrame:Hide()
         AZPInterruptHelperOptionPanel.ShowHideButton:SetText("Show Interrupts!")
         AZPIHShownLocked[2] = true
     else
-        AZPInterruptHelperFrame:Show()
+        AZPIHSelfFrame:Show()
         AZPInterruptHelperOptionPanel.ShowHideButton:SetText("Hide Interrupts!")
         AZPIHShownLocked[2] = false
     end
@@ -351,12 +351,12 @@ end
 
 function AZP.InterruptHelper:SaveLocation()
     local temp = {}
-    temp[1], temp[2], temp[3], temp[4], temp[5] = AZPInterruptHelperFrame:GetPoint()
+    temp[1], temp[2], temp[3], temp[4], temp[5] = AZPIHSelfFrame:GetPoint()
     AZPInterruptHelperLocation = temp
 end
 
 function AZP.InterruptHelper:ChangeFrameHeight()
-    AZPInterruptHelperFrame:SetHeight(#AZPInterruptOrder * 15 + 65)
+    AZPIHSelfFrame:SetHeight(#AZPInterruptOrder * 15 + 65)
 end
 
 function AZP.InterruptHelper:TickCoolDowns()
@@ -385,7 +385,7 @@ function AZP.InterruptHelper:SaveInterrupts()
             AZPinterruptOrderCooldownBars[i]:Show()
         end
     end
-    AZPInterruptHelperFrame.text:SetText(InterruptOrderText)
+    AZPIHSelfFrame.text:SetText(InterruptOrderText)
 
     local playerGUID = UnitGUID("player")
     if AZPInterruptOrder[1] == playerGUID then
@@ -397,12 +397,12 @@ end
 
 function AZP.InterruptHelper:InterruptBlinking(boolean)
     if boolean == true then
-        AZPInterruptHelperFrame:SetBackdropColor(1,0,0,1)
-        AZPInterruptHelperFrame:SetBackdropBorderColor(1, 1, 1, 1)
+        AZPIHSelfFrame:SetBackdropColor(1,0,0,1)
+        AZPIHSelfFrame:SetBackdropBorderColor(1, 1, 1, 1)
         blinkingBoolean = false
     else
-        AZPInterruptHelperFrame:SetBackdropColor(1, 1, 1, 1)
-        AZPInterruptHelperFrame:SetBackdropBorderColor(1, 0, 0, 1)
+        AZPIHSelfFrame:SetBackdropColor(1, 1, 1, 1)
+        AZPIHSelfFrame:SetBackdropBorderColor(1, 0, 0, 1)
         blinkingBoolean = true
     end
 end
@@ -559,7 +559,7 @@ if not IsAddOnLoaded("AzerPUGsCore") then
 end
 
 AZP.SlashCommands["IH"] = function()
-    if InterruptHelperSelfFrame ~= nil then InterruptHelperSelfFrame:Show() end
+    if AZPIHSelfFrame ~= nil then AZPIHSelfFrame:Show() end
 end
 
 AZP.SlashCommands["ih"] = AZP.SlashCommands["IH"]
