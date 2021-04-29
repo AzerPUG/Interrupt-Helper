@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 6
+AZP.VersionControl["Interrupt Helper"] = 7
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local AZPIHSelfFrame, AZPInterruptHelperOptionPanel = nil, nil
@@ -70,10 +70,6 @@ function AZP.InterruptHelper:OnLoadSelf()
 
     AZP.InterruptHelper:FillOptionsPanel(AZPInterruptHelperOptionPanel)
     AZP.InterruptHelper:OnLoadBoth()
-
-    if AZPInterruptHelperLocation == nil then
-        AZPInterruptHelperLocation = {"CENTER", nil, nil, 200, -200}
-    end
 
     UpdateFrame = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     UpdateFrame:SetPoint("CENTER", 0, 250)
@@ -289,6 +285,9 @@ function AZP.InterruptHelper:eventPlayerLeaveCombat()
 end
 
 function AZP.InterruptHelper:LoadSavedVars()
+    if AZPInterruptHelperLocation == nil then
+        AZPInterruptHelperLocation = {"CENTER", nil, nil, 0, 0}
+    end
     AZPIHSelfFrame:SetPoint(AZPInterruptHelperLocation[1], AZPInterruptHelperLocation[4], AZPInterruptHelperLocation[5])
     AZP.InterruptHelper:PutNamesInList()
     AZP.InterruptHelper:SaveInterrupts()
