@@ -344,6 +344,8 @@ function AZP.InterruptHelper:PutNamesInList()
                 AZPInterruptOrderEditBoxes[i].editbox:SetText(temp)
                 AZPInterruptOrder[i] = AZPInterruptHelperSettingsList[i]
             end
+        else
+            AZPInterruptOrderEditBoxes[i].editbox:SetText("")
         end
     end
 end
@@ -489,6 +491,14 @@ function AZP.InterruptHelper:ReceiveInterrupters(interruptersString)
             end
         end
     end
+
+    if #AZPInterruptOrder < #AZPInterruptHelperSettingsList then
+        for i = #AZPInterruptHelperSettingsList, #AZPInterruptOrder + 1, -1 do
+            table.remove( AZPInterruptHelperGUIDs, i)
+            table.remove( AZPInterruptHelperSettingsList, i)
+        end
+    end
+
     AZP.InterruptHelper:PutNamesInList()
     AZP.InterruptHelper:SaveInterrupts()
     AZP.InterruptHelper:ChangeFrameHeight()
