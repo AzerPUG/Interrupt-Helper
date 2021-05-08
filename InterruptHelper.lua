@@ -467,6 +467,9 @@ end
 
 function AZP.InterruptHelper:ReceiveInterrupters(interruptersString)
     AZPInterruptOrder = {}
+    AZPInterruptHelperGUIDs = {}
+    AZPInterruptHelperSettingsList = {}
+
     local pattern = ":([^:]+):"
     local stringIndex = 1
     while stringIndex < #interruptersString do
@@ -489,13 +492,6 @@ function AZP.InterruptHelper:ReceiveInterrupters(interruptersString)
                     AZPInterruptHelperSettingsList[i] = curGUID
                 end
             end
-        end
-    end
-
-    if #AZPInterruptOrder < #AZPInterruptHelperSettingsList then
-        for i = #AZPInterruptHelperSettingsList, #AZPInterruptOrder + 1, -1 do
-            table.remove( AZPInterruptHelperGUIDs, i)
-            table.remove( AZPInterruptHelperSettingsList, i)
         end
     end
 
