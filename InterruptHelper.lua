@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 9
+AZP.VersionControl["Interrupt Helper"] = 10
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local AZPIHSelfFrame, AZPInterruptHelperOptionPanel = nil, nil
@@ -17,8 +17,6 @@ local HaveShowedUpdateNotification = false
 local blinkingBoolean = false
 local blinkingTicker, cooldownTicker = nil, nil
 
-local optionHeader = "|cFF00FFFFInterrupt Helper|r"
-
 function AZP.InterruptHelper:OnLoadBoth()
     AZP.InterruptHelper:CreateMainFrame()
     C_ChatInfo.RegisterAddonMessagePrefix("AZPSHAREINFO")
@@ -33,7 +31,7 @@ function AZP.InterruptHelper:OnLoadCore()
     AZP.Core:RegisterEvents("PLAYER_LEAVE_COMBAT", function(...) AZP.InterruptHelper:eventPlayerLeaveCombat(...) end)
 
     AZP.OptionsPanels:RemovePanel("Interrupt Helper")
-    AZP.OptionsPanels:Generic("Interrupt Helper", optionHeader, function(frame)
+    AZP.OptionsPanels:Generic("Interrupt Helper", function(frame)
         AZPInterruptHelperOptionPanel = frame
         AZP.InterruptHelper:FillOptionsPanel(frame)
     end)
@@ -57,7 +55,7 @@ function AZP.InterruptHelper:OnLoadSelf()
 
     AZPInterruptHelperOptionPanel.header = AZPInterruptHelperOptionPanel:CreateFontString("AZPInterruptHelperOptionPanel", "ARTWORK", "GameFontNormalHuge")
     AZPInterruptHelperOptionPanel.header:SetPoint("TOP", 0, -10)
-    AZPInterruptHelperOptionPanel.header:SetText("|cFF00FFFFAzerPUG's Interrupt Helper Options!|r")
+    AZPInterruptHelperOptionPanel.header:SetText(AZPInterruptHelperOptionPanel.name)
 
     AZPInterruptHelperOptionPanel.footer = AZPInterruptHelperOptionPanel:CreateFontString("AZPInterruptHelperOptionPanel", "ARTWORK", "GameFontNormalLarge")
     AZPInterruptHelperOptionPanel.footer:SetPoint("TOP", 0, -400)
