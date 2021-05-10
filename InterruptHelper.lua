@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 8
+AZP.VersionControl["Interrupt Helper"] = 9
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local AZPIHSelfFrame, AZPInterruptHelperOptionPanel = nil, nil
@@ -377,12 +377,42 @@ function AZP.InterruptHelper:TickCoolDowns()
     end
 end
 
+function AZP.InterruptHelper:GetClassColor(classIndex)
+    if classIndex ==  0 then return 0.00, 0.00, 0.00          -- None
+    elseif classIndex ==  1 then return 0.78, 0.61, 0.43      -- Warrior
+    elseif classIndex ==  2 then return 0.96, 0.55, 0.73      -- Paladin
+    elseif classIndex ==  3 then return 0.67, 0.83, 0.45      -- Hunter
+    elseif classIndex ==  4 then return 1.00, 0.96, 0.41      -- Rogue
+    elseif classIndex ==  5 then return 1.00, 1.00, 1.00      -- Priest
+    elseif classIndex ==  6 then return 0.77, 0.12, 0.23      -- Death Knight
+    elseif classIndex ==  7 then return 0.00, 0.44, 0.87      -- Shaman
+    elseif classIndex ==  8 then return 0.25, 0.78, 0.92      -- Mage
+    elseif classIndex ==  9 then return 0.53, 0.53, 0.93      -- Warlock
+    elseif classIndex == 10 then return 0.00, 1.00, 0.60      -- Monk
+    elseif classIndex == 11 then return 1.00, 0.49, 0.04      -- Druid
+    elseif classIndex == 12 then return 0.64, 0.19, 0.79      -- Demon Hunter
+    end
+end
+
 function AZP.InterruptHelper:SaveInterrupts()
     local InterruptOrderText = ""
     for i = 1, 10 do
         AZPinterruptOrderCooldownBars[i]:Hide()
         if AZPInterruptOrder[i] ~= nil then
             AZPinterruptOrderCooldownBars[i].name:SetText(AZPInterruptHelperGUIDs[AZPInterruptOrder[i]])
+            local raidN = nil
+            for j = 1, 40 do
+                if GetRaidRosterInfo(j) ~= nil then             -- For party GetPartyMember(j) ~= nil but this excludes the player.
+                    local curGUID = UnitGUID("raid" .. j)
+                    if curGUID == AZPInterruptOrder[i] then
+                        raidN = ("raid" .. j)
+                    end
+                end
+            end
+            if raidN ~= nil then
+                local _, _, classIndex = UnitClass(raidN)
+                AZPinterruptOrderCooldownBars[i].name:SetTextColor(AZP.InterruptHelper:GetClassColor(classIndex))
+            end
             AZPinterruptOrderCooldownBars[i]:Show()
         end
     end
