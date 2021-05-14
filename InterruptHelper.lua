@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 9
+AZP.VersionControl["Interrupt Helper"] = 10
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local AZPIHSelfFrame, AZPInterruptHelperOptionPanel = nil, nil
