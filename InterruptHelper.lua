@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 10
+AZP.VersionControl["Interrupt Helper"] = 11
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local AZPIHSelfFrame, AZPInterruptHelperOptionPanel = nil, nil
@@ -29,8 +29,8 @@ function AZP.InterruptHelper:OnLoadCore()
     AZP.Core:RegisterEvents("COMBAT_LOG_EVENT_UNFILTERED", function(...) AZP.InterruptHelper:eventCombatLogEventUnfiltered(...) end)
     AZP.Core:RegisterEvents("VARIABLES_LOADED", function(...) AZP.InterruptHelper:eventVariablesLoaded(...) end)
     AZP.Core:RegisterEvents("CHAT_MSG_ADDON", function(...) AZP.InterruptHelper:eventChatMsgAddonInterrupts(...) end)
-    AZP.Core:RegisterEvents("PLAYER_ENTER_COMBAT", function(...) AZP.InterruptHelper:eventPlayerEnterCombat(...) end)
-    AZP.Core:RegisterEvents("PLAYER_LEAVE_COMBAT", function(...) AZP.InterruptHelper:eventPlayerLeaveCombat(...) end)
+    AZP.Core:RegisterEvents("ENCOUNTER_START", function(...) AZP.InterruptHelper:eventPlayerEnterCombat(...) end)
+    AZP.Core:RegisterEvents("ENCOUNTER_END", function(...) AZP.InterruptHelper:eventPlayerLeaveCombat(...) end)
 
     AZP.OptionsPanels:RemovePanel("Interrupt Helper")
     AZP.OptionsPanels:Generic("Interrupt Helper", optionHeader, function(frame)
@@ -47,8 +47,8 @@ function AZP.InterruptHelper:OnLoadSelf()
     EventFrame:RegisterEvent("VARIABLES_LOADED")
     EventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
     EventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-    EventFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
-    EventFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
+    EventFrame:RegisterEvent("ENCOUNTER_START")
+    EventFrame:RegisterEvent("ENCOUNTER_END")
     EventFrame:SetScript("OnEvent", function(...) AZP.InterruptHelper:OnEvent(...) end)
 
     AZPInterruptHelperOptionPanel = CreateFrame("FRAME", nil)
@@ -277,10 +277,12 @@ function AZP.InterruptHelper:eventChatMsgAddonVersion(...)
 end
 
 function AZP.InterruptHelper:eventPlayerEnterCombat()
+    --print("AZP-IH Entering Combat")
     cooldownTicker = C_Timer.NewTicker(1, function() AZP.InterruptHelper:TickCoolDowns() end, 1000)
 end
 
 function AZP.InterruptHelper:eventPlayerLeaveCombat()
+    --print("AZP-IH Leaving Combat")
     cooldownTicker:Cancel()
 end
 
@@ -584,9 +586,9 @@ function AZP.InterruptHelper:OnEvent(self, event, ...)
     elseif event == "CHAT_MSG_ADDON" then
         AZP.InterruptHelper:eventChatMsgAddonVersion(...)
         AZP.InterruptHelper:eventChatMsgAddonInterrupts(...)
-    elseif event == "PLAYER_ENTER_COMBAT" then
+    elseif event == "ENCOUNTER_START" then
         AZP.InterruptHelper:eventPlayerEnterCombat()
-    elseif event == "PLAYER_LEAVE_COMBAT" then
+    elseif event == "ENCOUNTER_END" then
         AZP.InterruptHelper:eventPlayerLeaveCombat()
     elseif event == "GROUP_ROSTER_UPDATE" then
         AZP.InterruptHelper:ShareVersion()
