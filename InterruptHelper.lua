@@ -1,12 +1,11 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 11
+AZP.VersionControl["Interrupt Helper"] = 12
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local AZPIHSelfFrame, AZPInterruptHelperOptionPanel = nil, nil
-local AZPInterruptOrder, AZPInterruptHelperGUIDs, AZPInterruptOrderEditBoxes, AZPinterruptOrderCooldownBars  = {}, {}, {}, {}
-local AZPinterruptOrderCooldowns = {}
+local AZPInterruptOrder, AZPInterruptHelperGUIDs, AZPInterruptOrderEditBoxes = {}, {}, {}
 if AZPInterruptHelperSettingsList == nil then AZPInterruptHelperSettingsList = {} end
 
 if AZPIHShownLocked == nil then AZPIHShownLocked = {false, false} end
@@ -20,6 +19,9 @@ local blinkingTicker, cooldownTicker = nil, nil
 local optionHeader = "|cFF00FFFFInterrupt Helper|r"
 
 function AZP.InterruptHelper:OnLoadBoth()
+    for i = 1, 10 do
+        AZPInterruptOrder[i] = {}
+    end
     AZP.InterruptHelper:CreateMainFrame()
     C_ChatInfo.RegisterAddonMessagePrefix("AZPSHAREINFO")
 end
@@ -158,15 +160,17 @@ function AZP.InterruptHelper:FillOptionsPanel(frameToFill)
                                 curName = string.match(curName, "(.+)-")
                             end
                             if curName == AZPInterruptOrderEditBoxes[j].editbox:GetText() then
-                                AZPInterruptOrder[j] = curGUID
+                                AZPInterruptOrder[j][1] = curGUID
                                 AZPInterruptHelperGUIDs[curGUID] = curName
                             end
                         end
                     end
                 else
-                    AZPInterruptOrder[j] = nil
+                    AZPInterruptOrder[j][1] = nil
                 end
-                AZPInterruptHelperSettingsList[j] = AZPInterruptOrder[j]
+                if AZPInterruptOrder[j][1] ~= nil then
+                    AZPInterruptHelperSettingsList[j] = AZPInterruptOrder[j][1]
+                end
             end
             AZP.InterruptHelper:SaveInterrupts()
             AZP.InterruptHelper:ChangeFrameHeight()
@@ -210,26 +214,26 @@ function AZP.InterruptHelper:CreateMainFrame()
     IUAddonFrameCloseButton:SetScript("OnClick", function() AZP.InterruptHelper:ShowHideFrame() end )
 
     for i = 1, 10 do
-        AZPinterruptOrderCooldownBars[i] = CreateFrame("StatusBar", nil, AZPIHSelfFrame)
-        AZPinterruptOrderCooldownBars[i]:SetSize(AZPIHSelfFrame:GetWidth() - 20, 18)
-        AZPinterruptOrderCooldownBars[i]:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
-        AZPinterruptOrderCooldownBars[i]:SetPoint("TOP", 0, -20 * i - 25)
-        AZPinterruptOrderCooldownBars[i]:SetMinMaxValues(0, 100)
-        AZPinterruptOrderCooldownBars[i]:SetValue(100)
-        AZPinterruptOrderCooldownBars[i].name = AZPinterruptOrderCooldownBars[i]:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-        AZPinterruptOrderCooldownBars[i].name:SetSize(AZPinterruptOrderCooldownBars[i]:GetWidth() - 25, 16)
-        AZPinterruptOrderCooldownBars[i].name:SetPoint("CENTER", 0, -1)
-        AZPinterruptOrderCooldownBars[i].name:SetText("charName")
-        AZPinterruptOrderCooldownBars[i].bg = AZPinterruptOrderCooldownBars[i]:CreateTexture(nil, "BACKGROUND")
-        AZPinterruptOrderCooldownBars[i].bg:SetTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
-        AZPinterruptOrderCooldownBars[i].bg:SetAllPoints(true)
-        AZPinterruptOrderCooldownBars[i].bg:SetVertexColor(1, 0, 0)
-        AZPinterruptOrderCooldownBars[i].cooldown = AZPinterruptOrderCooldownBars[i]:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-        AZPinterruptOrderCooldownBars[i].cooldown:SetSize(25, 16)
-        AZPinterruptOrderCooldownBars[i].cooldown:SetPoint("RIGHT", -5, 0)
-        AZPinterruptOrderCooldownBars[i].cooldown:SetText("-")
-        AZPinterruptOrderCooldownBars[i]:SetStatusBarColor(0, 0.75, 1)
-        AZPinterruptOrderCooldownBars[i]:Hide()
+        AZPInterruptOrder[i][2] = CreateFrame("StatusBar", nil, AZPIHSelfFrame)
+        AZPInterruptOrder[i][2]:SetSize(AZPIHSelfFrame:GetWidth() - 20, 18)
+        AZPInterruptOrder[i][2]:SetStatusBarTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
+        AZPInterruptOrder[i][2]:SetPoint("TOP", 0, -20 * i - 20)
+        AZPInterruptOrder[i][2]:SetMinMaxValues(0, 100)
+        AZPInterruptOrder[i][2]:SetValue(100)
+        AZPInterruptOrder[i][2].name = AZPInterruptOrder[i][2]:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+        AZPInterruptOrder[i][2].name:SetSize(AZPInterruptOrder[i][2]:GetWidth() - 25, 16)
+        AZPInterruptOrder[i][2].name:SetPoint("CENTER", 0, -1)
+        AZPInterruptOrder[i][2].name:SetText("charName")
+        AZPInterruptOrder[i][2].bg = AZPInterruptOrder[i][2]:CreateTexture(nil, "BACKGROUND")
+        AZPInterruptOrder[i][2].bg:SetTexture("Interface\\TARGETINGFRAME\\UI-StatusBar")
+        AZPInterruptOrder[i][2].bg:SetAllPoints(true)
+        AZPInterruptOrder[i][2].bg:SetVertexColor(1, 0, 0)
+        AZPInterruptOrder[i][2].cooldown = AZPInterruptOrder[i][2]:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
+        AZPInterruptOrder[i][2].cooldown:SetSize(25, 16)
+        AZPInterruptOrder[i][2].cooldown:SetPoint("RIGHT", -5, 0)
+        AZPInterruptOrder[i][2].cooldown:SetText("-")
+        AZPInterruptOrder[i][2]:SetStatusBarColor(0, 0.75, 1)
+        AZPInterruptOrder[i][2]:Hide()
     end
 end
 
@@ -240,8 +244,9 @@ function AZP.InterruptHelper:eventCombatLogEventUnfiltered(...)
         local unitName = UnitFullName("PLAYER")
         if AZP.InterruptHelper.interruptSpells[spellID] ~= nil then
             for i = 1, #AZPInterruptOrder do
-                if UnitGUID == AZPInterruptOrder[i] then
+                if UnitGUID == AZPInterruptOrder[i][1] then
                     AZP.InterruptHelper:StructureInterrupts(UnitGUID, spellID)
+                    break
                 end
             end
             if casterName == unitName then      -- Change to GUID.
@@ -277,12 +282,10 @@ function AZP.InterruptHelper:eventChatMsgAddonVersion(...)
 end
 
 function AZP.InterruptHelper:eventPlayerEnterCombat()
-    --print("AZP-IH Entering Combat")
     cooldownTicker = C_Timer.NewTicker(1, function() AZP.InterruptHelper:TickCoolDowns() end, 1000)
 end
 
 function AZP.InterruptHelper:eventPlayerLeaveCombat()
-    --print("AZP-IH Leaving Combat")
     cooldownTicker:Cancel()
 end
 
@@ -344,7 +347,7 @@ function AZP.InterruptHelper:PutNamesInList()
             if AZPInterruptHelperGUIDs[AZPInterruptHelperSettingsList[i]] ~= nil then
                 local temp = AZPInterruptHelperGUIDs[AZPInterruptHelperSettingsList[i]]
                 AZPInterruptOrderEditBoxes[i].editbox:SetText(temp)
-                AZPInterruptOrder[i] = AZPInterruptHelperSettingsList[i]
+                AZPInterruptOrder[i][1] = AZPInterruptHelperSettingsList[i]
             end
         else
             AZPInterruptOrderEditBoxes[i].editbox:SetText("")
@@ -359,21 +362,25 @@ function AZP.InterruptHelper:SaveLocation()
 end
 
 function AZP.InterruptHelper:ChangeFrameHeight()
-    AZPIHSelfFrame:SetHeight(#AZPInterruptOrder * 15 + 65)
+    local countGUID = 0
+    for i = 1, 10 do
+        if AZPInterruptOrder[i][1] ~= nil then countGUID = countGUID + 1 end
+    end
+    AZPIHSelfFrame:SetHeight(countGUID * 20 + 50)
 end
 
 function AZP.InterruptHelper:TickCoolDowns()
-    for i = 1, #AZPinterruptOrderCooldownBars do
-        if AZPinterruptOrderCooldowns[i] ~= nil then
-            if AZPinterruptOrderCooldowns[i] <= 0 then
-                AZPinterruptOrderCooldowns[i] = nil
-                AZPinterruptOrderCooldownBars[i].cooldown:SetText("-")
-                AZPinterruptOrderCooldownBars[i]:SetMinMaxValues(0, 100)
-                AZPinterruptOrderCooldownBars[i]:SetValue(100)
+    for i = 1, #AZPInterruptOrder do
+        if AZPInterruptOrder[i][3] ~= nil then
+            if AZPInterruptOrder[i][3] <= 0 then
+                AZPInterruptOrder[i][3] = nil
+                AZPInterruptOrder[i][2].cooldown:SetText("-")
+                AZPInterruptOrder[i][2]:SetMinMaxValues(0, 100)
+                AZPInterruptOrder[i][2]:SetValue(100)
             else
-                AZPinterruptOrderCooldowns[i] = AZPinterruptOrderCooldowns[i] - 1
-                AZPinterruptOrderCooldownBars[i].cooldown:SetText(AZPinterruptOrderCooldowns[i])
-                AZPinterruptOrderCooldownBars[i]:SetValue(AZPinterruptOrderCooldowns[i])
+                AZPInterruptOrder[i][3] = AZPInterruptOrder[i][3] - 1
+                AZPInterruptOrder[i][2].cooldown:SetText(AZPInterruptOrder[i][3])
+                AZPInterruptOrder[i][2]:SetValue(AZPInterruptOrder[i][3])
             end
         end
     end
@@ -399,29 +406,34 @@ end
 function AZP.InterruptHelper:SaveInterrupts()
     local InterruptOrderText = ""
     for i = 1, 10 do
-        AZPinterruptOrderCooldownBars[i]:Hide()
-        if AZPInterruptOrder[i] ~= nil then
-            AZPinterruptOrderCooldownBars[i].name:SetText(AZPInterruptHelperGUIDs[AZPInterruptOrder[i]])
+        if AZPInterruptOrder[i][1] ~= nil then
+            AZPInterruptOrder[i][2].name:SetText(AZPInterruptHelperGUIDs[AZPInterruptOrder[i][1]])
             local raidN = nil
             for j = 1, 40 do
                 if GetRaidRosterInfo(j) ~= nil then             -- For party GetPartyMember(j) ~= nil but this excludes the player.
                     local curGUID = UnitGUID("raid" .. j)
-                    if curGUID == AZPInterruptOrder[i] then
+                    if curGUID == AZPInterruptOrder[i][1] then
                         raidN = ("raid" .. j)
                     end
                 end
             end
             if raidN ~= nil then
                 local _, _, classIndex = UnitClass(raidN)
-                AZPinterruptOrderCooldownBars[i].name:SetTextColor(AZP.InterruptHelper:GetClassColor(classIndex))
+                if AZP.InterruptHelper:CheckIfDead(AZPInterruptOrder[i][1]) then
+                    AZPInterruptOrder[i][2].name:SetTextColor(0.5, 0.5, 0.5)
+                else
+                    AZPInterruptOrder[i][2].name:SetTextColor(AZP.InterruptHelper:GetClassColor(classIndex))
+                end
             end
-            AZPinterruptOrderCooldownBars[i]:Show()
+            AZPInterruptOrder[i][2]:Show()
+        else
+            AZPInterruptOrder[i][2]:Hide()
         end
     end
     AZPIHSelfFrame.text:SetText(InterruptOrderText)
 
     local playerGUID = UnitGUID("player")
-    if AZPInterruptOrder[1] == playerGUID then
+    if AZPInterruptOrder[1][1] == playerGUID then
         blinkingTicker = C_Timer.NewTicker(0.5, function() AZP.InterruptHelper:InterruptBlinking(blinkingBoolean) end, 10)
     else
         AZP.InterruptHelper:InterruptBlinking(false)
@@ -440,33 +452,65 @@ function AZP.InterruptHelper:InterruptBlinking(boolean)
     end
 end
 
+function AZP.InterruptHelper:CheckIfDead(playerGUID)
+    local deathStatus
+    for i = 1, 40 do
+        local curGUID = UnitGUID("Raid" .. i)
+        if curGUID ~= nil then
+            if curGUID == playerGUID then
+                deathStatus = UnitIsDeadOrGhost("Raid" .. i)
+            end
+        end
+    end
+    return deathStatus
+end
+
 function AZP.InterruptHelper:StructureInterrupts(interruptedGUID, interruptSpellID)
     local interuptedIndex = nil
+    local tempDeadList, tempAliveList, tempInactiveList = {}, {}, {}
     for i = 1, #AZPInterruptOrder do
-        if AZPInterruptOrder[i] == interruptedGUID then
+        if AZPInterruptOrder[i][1] == nil then
+            tempInactiveList[#tempInactiveList + 1] = AZPInterruptOrder[i]
+        else
+            if AZP.InterruptHelper:CheckIfDead(AZPInterruptOrder[i][1]) then
+                tempDeadList[#tempDeadList + 1] = AZPInterruptOrder[i]
+            else
+                tempAliveList[#tempAliveList + 1] = AZPInterruptOrder[i]
+            end
+        end
+    end
+
+    for i = 1, #tempAliveList do
+        if tempAliveList[i][1] == interruptedGUID then
             interuptedIndex = i
         end
     end
 
+    local tempInterrupter = tempAliveList[interuptedIndex]
+
     local spellCooldown = AZP.InterruptHelper:GetSpellCooldown(interruptSpellID)
-    AZPinterruptOrderCooldowns[interuptedIndex] = spellCooldown
-    AZPinterruptOrderCooldownBars[interuptedIndex]:SetMinMaxValues(0, spellCooldown)
-    AZPinterruptOrderCooldownBars[interuptedIndex].cooldown:SetText(spellCooldown)
+    tempInterrupter[3] = spellCooldown
+    tempInterrupter[2]:SetMinMaxValues(0, spellCooldown)
+    tempInterrupter[2].cooldown:SetText(spellCooldown)
 
-    local temp = AZPInterruptOrder[interuptedIndex]
-    local temp2 = AZPinterruptOrderCooldownBars[interuptedIndex]
-    local temp3 = AZPinterruptOrderCooldowns[interuptedIndex]
-
-    for i = interuptedIndex, #AZPInterruptOrder - 1 do
-        AZPInterruptOrder[i] = AZPInterruptOrder[i+1]
-        AZPinterruptOrderCooldownBars[i] = AZPinterruptOrderCooldownBars[i+1]
-        AZPinterruptOrderCooldowns[i] = AZPinterruptOrderCooldowns[i+1]
-        AZPinterruptOrderCooldownBars[i]:SetPoint("TOP", 0, -20 * i - 25)
+    for i = interuptedIndex, #tempAliveList - 1 do
+        tempAliveList[i] = tempAliveList[i+1]
     end
-    AZPInterruptOrder[#AZPInterruptOrder] = temp
-    AZPinterruptOrderCooldownBars[#AZPInterruptOrder] = temp2
-    AZPinterruptOrderCooldowns[#AZPInterruptOrder] = temp3
-    AZPinterruptOrderCooldownBars[#AZPInterruptOrder]:SetPoint("TOP", 0, -20 * #AZPInterruptOrder - 25)
+    tempAliveList[#tempAliveList] = tempInterrupter
+
+    for i = 1, #tempAliveList do
+        AZPInterruptOrder[i] = tempAliveList[i]
+    end
+    for i = 1, #tempDeadList do
+        AZPInterruptOrder[i + #tempAliveList] = tempDeadList[i]
+    end
+    for i = 1, #tempInactiveList do
+        AZPInterruptOrder[i + #tempDeadList + #tempAliveList] = tempInactiveList[i]
+    end
+
+    for i = 1, #AZPInterruptOrder do
+        AZPInterruptOrder[i][2]:SetPoint("TOP", 0, -20 * i - 20)
+    end
 
     AZP.InterruptHelper:SaveInterrupts()
 end
@@ -480,7 +524,7 @@ function AZP.InterruptHelper:ShareInterrupters()
     for i = 1, #AZPInterruptHelperSettingsList do
         for j = 1, 40 do
             if GetRaidRosterInfo(j) ~= nil then             -- For party GetPartyMember(j) ~= nil but this excludes the player.
-                local curGUID = UnitGUID("raid" .. j)
+                local curGUID = UnitGUID("Raid" .. j)
                 if curGUID == AZPInterruptHelperSettingsList[i] then
                     curGUID = string.match(curGUID, "-(.+)")
                     GUIDString = GUIDString .. ":" .. curGUID .. ":"
@@ -509,7 +553,7 @@ function AZP.InterruptHelper:ReceiveInterrupters(interruptersString)
         local unitGUID = string.match(interruptersString, pattern, stringIndex)
         unitGUID = "Player-" .. unitGUID
         stringIndex = endPos + 1
-        AZPInterruptOrder[#AZPInterruptOrder + 1] = unitGUID
+        AZPInterruptOrder[#AZPInterruptOrder + 1][1] = unitGUID
     end
     for i = 1, #AZPInterruptOrder do
         for j = 1, 40 do
@@ -519,7 +563,7 @@ function AZP.InterruptHelper:ReceiveInterrupters(interruptersString)
                     curName = string.match(curName, "(.+)-")
                 end
                 local curGUID = UnitGUID("raid" .. j)
-                if curGUID == AZPInterruptOrder[i] then
+                if curGUID == AZPInterruptOrder[i][1] then
                     AZPInterruptHelperGUIDs[i] = curName
                     AZPInterruptHelperSettingsList[i] = curGUID
                 end
