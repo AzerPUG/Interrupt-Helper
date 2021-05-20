@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 12
+AZP.VersionControl["Interrupt Helper"] = 13
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local AZPIHSelfFrame, AZPInterruptHelperOptionPanel = nil, nil
@@ -168,9 +168,7 @@ function AZP.InterruptHelper:FillOptionsPanel(frameToFill)
                 else
                     AZPInterruptOrder[j][1] = nil
                 end
-                if AZPInterruptOrder[j][1] ~= nil then
-                    AZPInterruptHelperSettingsList[j] = AZPInterruptOrder[j][1]
-                end
+                AZPInterruptHelperSettingsList[j] = AZPInterruptOrder[j][1]
             end
             AZP.InterruptHelper:SaveInterrupts()
             AZP.InterruptHelper:ChangeFrameHeight()
@@ -364,7 +362,9 @@ end
 function AZP.InterruptHelper:ChangeFrameHeight()
     local countGUID = 0
     for i = 1, 10 do
-        if AZPInterruptOrder[i][1] ~= nil then countGUID = countGUID + 1 end
+        if AZPInterruptOrder[i] ~= nil then
+            if AZPInterruptOrder[i][1] ~= nil then countGUID = countGUID + 1 end
+        end
     end
     AZPIHSelfFrame:SetHeight(countGUID * 20 + 50)
 end
@@ -433,10 +433,12 @@ function AZP.InterruptHelper:SaveInterrupts()
     AZPIHSelfFrame.text:SetText(InterruptOrderText)
 
     local playerGUID = UnitGUID("player")
-    if AZPInterruptOrder[1][1] == playerGUID then
-        blinkingTicker = C_Timer.NewTicker(0.5, function() AZP.InterruptHelper:InterruptBlinking(blinkingBoolean) end, 10)
-    else
-        AZP.InterruptHelper:InterruptBlinking(false)
+    if AZPInterruptOrder[1] ~= nil then
+        if AZPInterruptOrder[1][1] == playerGUID then
+            blinkingTicker = C_Timer.NewTicker(0.5, function() AZP.InterruptHelper:InterruptBlinking(blinkingBoolean) end, 10)
+        else
+            AZP.InterruptHelper:InterruptBlinking(false)
+        end
     end
 end
 
@@ -542,30 +544,39 @@ function AZP.InterruptHelper:ShareInterrupters()
 end
 
 function AZP.InterruptHelper:ReceiveInterrupters(interruptersString)
-    AZPInterruptOrder = {}
+    print(interruptersString)
+    for i = 1, 10 do
+        AZPInterruptOrder[i][1] = nil
+    end
     AZPInterruptHelperGUIDs = {}
     AZPInterruptHelperSettingsList = {}
 
     local pattern = ":([^:]+):"
     local stringIndex = 1
+    local index = 0
     while stringIndex < #interruptersString do
         local _, endPos = string.find(interruptersString, pattern, stringIndex)
         local unitGUID = string.match(interruptersString, pattern, stringIndex)
         unitGUID = "Player-" .. unitGUID
         stringIndex = endPos + 1
-        AZPInterruptOrder[#AZPInterruptOrder + 1][1] = unitGUID
+        index = index + 1
+        if AZPInterruptOrder[index][1] == nil then
+            AZPInterruptOrder[index][1] = unitGUID
+        end
     end
     for i = 1, #AZPInterruptOrder do
-        for j = 1, 40 do
-            if GetRaidRosterInfo(j) ~= nil then
-                local curName = GetRaidRosterInfo(j)           -- For party GetPartyMember(j) ~= nil but this excludes the player.
-                if string.find(curName, "-") then
-                    curName = string.match(curName, "(.+)-")
-                end
-                local curGUID = UnitGUID("raid" .. j)
-                if curGUID == AZPInterruptOrder[i][1] then
-                    AZPInterruptHelperGUIDs[i] = curName
-                    AZPInterruptHelperSettingsList[i] = curGUID
+        if AZPInterruptOrder[i][1] ~= nil then
+            for j = 1, 40 do
+                if GetRaidRosterInfo(j) ~= nil then
+                    local curName = GetRaidRosterInfo(j)           -- For party GetPartyMember(j) ~= nil but this excludes the player.
+                    if string.find(curName, "-") then
+                        curName = string.match(curName, "(.+)-")
+                    end
+                    local curGUID = UnitGUID("raid" .. j)
+                    if curGUID == AZPInterruptOrder[i][1] then
+                        AZPInterruptHelperGUIDs[i] = curName
+                        AZPInterruptHelperSettingsList[i] = curGUID
+                    end
                 end
             end
         end
