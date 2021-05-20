@@ -405,9 +405,13 @@ end
 
 function AZP.InterruptHelper:SaveInterrupts()
     local InterruptOrderText = ""
+    local skull = "\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8.png:0\124t"
+    local curName = nil
     for i = 1, 10 do
         if AZPInterruptOrder[i][1] ~= nil then
-            AZPInterruptOrder[i][2].name:SetText(AZPInterruptHelperGUIDs[AZPInterruptOrder[i][1]])
+            curName = AZPInterruptHelperGUIDs[AZPInterruptOrder[i][1]]
+            if AZP.InterruptHelper:CheckIfDead(AZPInterruptOrder[i][1]) then curName = skull .. curName .. " " .. skull end
+            AZPInterruptOrder[i][2].name:SetText(curName)
             local raidN = nil
             for j = 1, 40 do
                 if GetRaidRosterInfo(j) ~= nil then             -- For party GetPartyMember(j) ~= nil but this excludes the player.
