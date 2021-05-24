@@ -573,7 +573,6 @@ function AZP.InterruptHelper:ShareInterrupters()
 end
 
 function AZP.InterruptHelper:ReceiveInterrupters(interruptersString)
-    print(interruptersString)
     for i = 1, 10 do
         AZPInterruptOrder[i][1] = nil
     end
