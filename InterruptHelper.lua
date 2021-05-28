@@ -13,6 +13,11 @@ if AZPIHShownLocked == nil then AZPIHShownLocked = {false, false} end
 local UpdateFrame, EventFrame = nil, nil
 local HaveShowedUpdateNotification = false
 
+local PopUpFrame = nil
+local curScale = 0.75
+local soundID = 8959
+local soundChannel = 1
+
 local blinkingBoolean = false
 local blinkingTicker, cooldownTicker = nil, nil
 
@@ -23,6 +28,7 @@ function AZP.InterruptHelper:OnLoadBoth()
         AZPInterruptOrder[i] = {}
     end
     AZP.InterruptHelper:CreateMainFrame()
+    AZP.InterruptHelper:CreatePopUpFrame()
     C_ChatInfo.RegisterAddonMessagePrefix("AZPSHAREINFO")
 end
 
@@ -235,6 +241,18 @@ function AZP.InterruptHelper:CreateMainFrame()
     end
 end
 
+function AZP.InterruptHelper:CreatePopUpFrame()
+    PopUpFrame = CreateFrame("FRAME", nil, UIParent)
+    PopUpFrame:SetPoint("CENTER", 0, 250)
+    PopUpFrame:SetSize(200, 50)
+
+    PopUpFrame.text = PopUpFrame:CreateFontString("PopUpFrame", "ARTWORK", "GameFontNormalHuge")
+    PopUpFrame.text:SetPoint("CENTER", 0, 0)
+    PopUpFrame.text:SetText("|cFFFF0000INTERRUPT NEXT!|r")
+    PopUpFrame.text:SetScale(0.5)
+    PopUpFrame.text:Hide()
+end
+
 function AZP.InterruptHelper:eventCombatLogEventUnfiltered(...)
     local v1, combatEvent, v3, UnitGUID, casterName, v6, v7, v8, v9, v10, v11, spellID, v13, v14, v15 = CombatLogGetCurrentEventInfo()
     -- v12 == SpellID, but not always, sometimes several IDs for one spell (when multiple things happen on one spell)
@@ -435,6 +453,17 @@ function AZP.InterruptHelper:SaveInterrupts()
     local playerGUID = UnitGUID("player")
     if AZPInterruptOrder[1] ~= nil then
         if AZPInterruptOrder[1][1] == playerGUID then
+            curScale = 0.5
+            PopUpFrame.text:SetScale(curScale)
+            PopUpFrame.text:Show()
+            PlaySound(soundID, soundChannel)
+            C_Timer.NewTimer(2.5, function() PopUpFrame.text:Hide() end)
+            C_Timer.NewTicker(0.005,
+            function()
+                curScale = curScale + 0.15
+                PopUpFrame.text:SetScale(curScale)
+            end,
+            35)
             blinkingTicker = C_Timer.NewTicker(0.5, function() AZP.InterruptHelper:InterruptBlinking(blinkingBoolean) end, 10)
         else
             AZP.InterruptHelper:InterruptBlinking(false)
