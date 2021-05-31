@@ -254,7 +254,7 @@ function AZP.InterruptHelper:CreatePopUpFrame()
 end
 
 function AZP.InterruptHelper:eventCombatLogEventUnfiltered(...)
-    local v1, combatEvent, v3, UnitGUID, casterName, v6, v7, v8, v9, v10, v11, spellID, v13, v14, v15 = CombatLogGetCurrentEventInfo()
+    local v1, combatEvent, v3, UnitGUID, casterName, v6, v7, destGUID, destName, v10, v11, spellID, v13, v14, v15 = CombatLogGetCurrentEventInfo()
     -- v12 == SpellID, but not always, sometimes several IDs for one spell (when multiple things happen on one spell)
     if combatEvent == "SPELL_CAST_SUCCESS" then
         local unitName = UnitFullName("PLAYER")
@@ -270,6 +270,13 @@ function AZP.InterruptHelper:eventCombatLogEventUnfiltered(...)
                     blinkingTicker:Cancel()
                 end
                 AZP.InterruptHelper:InterruptBlinking(false)
+            end
+        end
+    elseif combatEvent == "UNIT_DIED" then
+        for i = 1, #AZPInterruptOrder do
+            if destGUID == AZPInterruptOrder[i][1] then
+                AZP.InterruptHelper:StructureInterrupts(destGUID, nil)
+                break
             end
         end
     end
@@ -517,12 +524,16 @@ function AZP.InterruptHelper:StructureInterrupts(interruptedGUID, interruptSpell
         end
     end
 
+    if interuptedIndex == nil then interuptedIndex = 1 end
+
     local tempInterrupter = tempAliveList[interuptedIndex]
 
-    local spellCooldown = AZP.InterruptHelper:GetSpellCooldown(interruptSpellID)
-    tempInterrupter[3] = spellCooldown
-    tempInterrupter[2]:SetMinMaxValues(0, spellCooldown)
-    tempInterrupter[2].cooldown:SetText(spellCooldown)
+    if interruptSpellID ~= nil then
+        local spellCooldown = AZP.InterruptHelper:GetSpellCooldown(interruptSpellID)
+        tempInterrupter[3] = spellCooldown
+        tempInterrupter[2]:SetMinMaxValues(0, spellCooldown)
+        tempInterrupter[2].cooldown:SetText(spellCooldown)
+    end
 
     for i = interuptedIndex, #tempAliveList - 1 do
         tempAliveList[i] = tempAliveList[i+1]
