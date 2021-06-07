@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 16
+AZP.VersionControl["Interrupt Helper"] = 17
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local AZPIHSelfFrame, AZPInterruptHelperOptionPanel = nil, nil
@@ -259,7 +259,9 @@ function AZP.InterruptHelper:eventCombatLogEventUnfiltered(...)
     if combatEvent == "SPELL_CAST_SUCCESS" then
         local unitName = UnitFullName("PLAYER")
         if AZP.InterruptHelper.interruptSpells[spellID] ~= nil then
+            print(UnitGUID, casterName, spellID)
             for i = 1, #AZPInterruptOrder do
+                local potentialPetGUID = string.match(UnitGUID, "(.*)-")
                 if UnitGUID == AZPInterruptOrder[i][1] then
                     AZP.InterruptHelper:StructureInterrupts(UnitGUID, spellID)
                     break
