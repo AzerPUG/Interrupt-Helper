@@ -259,7 +259,6 @@ function AZP.InterruptHelper:eventCombatLogEventUnfiltered(...)
     if combatEvent == "SPELL_CAST_SUCCESS" then
         local unitName = UnitFullName("PLAYER")
         if AZP.InterruptHelper.interruptSpells[spellID] ~= nil then
-            print(UnitGUID, casterName, spellID)
             for i = 1, #AZPInterruptOrder do
                 local potentialPetGUID = string.match(UnitGUID, "(.*)-")
                 if UnitGUID == AZPInterruptOrder[i][1] then
