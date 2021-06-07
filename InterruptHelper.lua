@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 17
+AZP.VersionControl["Interrupt Helper"] = 16
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 
 local AZPIHSelfFrame, AZPInterruptHelperOptionPanel = nil, nil
@@ -143,44 +143,70 @@ function AZP.InterruptHelper:FillOptionsPanel(frameToFill)
         local interruptersFrame = CreateFrame("Frame", nil, frameToFill)
         interruptersFrame:SetSize(200, 25)
         interruptersFrame:SetPoint("LEFT", 75, -30*i + 250)
-        interruptersFrame.editbox = CreateFrame("EditBox", nil, interruptersFrame, "InputBoxTemplate")
-        interruptersFrame.editbox:SetSize(100, 25)
-        interruptersFrame.editbox:SetPoint("LEFT", 50, 0)
-        interruptersFrame.editbox:SetAutoFocus(false)
+        -- interruptersFrame.editbox = CreateFrame("EditBox", nil, interruptersFrame, "InputBoxTemplate")
+        -- interruptersFrame.editbox:SetSize(100, 25)
+        -- interruptersFrame.editbox:SetPoint("LEFT", 50, 0)
+        -- interruptersFrame.editbox:SetAutoFocus(false)
+
+        interruptersFrame.Name = ""
+        interruptersFrame.GUID = ""
+
+        interruptersFrame.DropDownRaiders = CreateFrame("Frame", nil, interruptersFrame, "UIDropDownMenuTemplate")
+        interruptersFrame.DropDownRaiders:SetPoint("LEFT", 50, 0)
+        UIDropDownMenu_SetText(interruptersFrame.DropDownRaiders, "-")
+        UIDropDownMenu_Initialize(interruptersFrame.DropDownRaiders, function(self, level, menuList)
+            local info = UIDropDownMenu_CreateInfo()
+            info.func = AZP.InterruptHelper.SetValue
+
+            info.text = "-"
+            info.arg1 = ""
+            info.arg2 = i
+            UIDropDownMenu_AddButton(info, 1)
+
+            for j = 1, 40 do
+                if UnitName("Raid" .. j) ~= nil then
+                    info.text = UnitName("Raid" .. j)
+                    info.arg1 = UnitGUID("Raid" .. j)
+                    info.arg2 = i
+                    UIDropDownMenu_AddButton(info, 1)
+                end
+            end
+        end)
+
         interruptersFrame.text = interruptersFrame:CreateFontString("interruptersFrame", "ARTWORK", "GameFontNormalLarge")
         interruptersFrame.text:SetSize(100, 25)
         interruptersFrame.text:SetPoint("LEFT", -50, 0)
         interruptersFrame.text:SetText("Interrupter " .. i .. ":")
 
         AZPInterruptOrderEditBoxes[i] = interruptersFrame
-
-        interruptersFrame.editbox:SetScript("OnEditFocusLost",
-        function()
-            for j = 1, 10 do
-                if (AZPInterruptOrderEditBoxes[j].editbox:GetText() ~= nil and AZPInterruptOrderEditBoxes[j].editbox:GetText() ~= "") then
-                    for k = 1, 40 do
-                        if GetRaidRosterInfo(k) ~= nil then             -- For party GetPartyMember(j) ~= nil but this excludes the player.
-                            local curGUID = UnitGUID("raid" .. k)
-                            local curName = GetRaidRosterInfo(k)
-                            if string.find(curName, "-") then
-                                curName = string.match(curName, "(.+)-")
-                            end
-                            if curName == AZPInterruptOrderEditBoxes[j].editbox:GetText() then
-                                AZPInterruptOrder[j][1] = curGUID
-                                AZPInterruptHelperGUIDs[curGUID] = curName
-                            end
-                        end
-                    end
-                else
-                    AZPInterruptOrder[j][1] = nil
-                end
-                AZPInterruptHelperSettingsList[j] = AZPInterruptOrder[j][1]
-            end
-            AZP.InterruptHelper:SaveInterrupts()
-            AZP.InterruptHelper:ChangeFrameHeight()
-        end)
     end
     frameToFill:Hide()
+end
+
+function AZP.InterruptHelper:SetValue(inputGUID, index)
+    local curName = ""
+    if inputGUID == "" then
+        curName = "-"
+        AZPInterruptOrder[index][1] = nil
+    else
+        for i = 1, 40 do
+            local curGUID = UnitGUID("raid" .. i)
+            if curGUID == inputGUID then
+                curName = UnitName("raid" .. i)
+            end
+        end
+        AZPInterruptOrder[index][1] = inputGUID
+        AZPInterruptHelperGUIDs[inputGUID] = curName
+    end
+
+    UIDropDownMenu_SetText(AZPInterruptOrderEditBoxes[index].DropDownRaiders, curName)
+
+    AZPInterruptHelperSettingsList[index] = AZPInterruptOrder[index][1]
+
+    AZP.InterruptHelper:SaveInterrupts()
+    AZP.InterruptHelper:ChangeFrameHeight()
+
+    CloseDropDownMenus()
 end
 
 function AZP.InterruptHelper:CreateMainFrame()
@@ -259,7 +285,6 @@ function AZP.InterruptHelper:eventCombatLogEventUnfiltered(...)
     if combatEvent == "SPELL_CAST_SUCCESS" then
         local unitName = UnitFullName("PLAYER")
         if AZP.InterruptHelper.interruptSpells[spellID] ~= nil then
-            print(UnitGUID, casterName, spellID)
             for i = 1, #AZPInterruptOrder do
                 local potentialPetGUID = string.match(UnitGUID, "(.*)-")
                 if UnitGUID == AZPInterruptOrder[i][1] then
@@ -371,11 +396,11 @@ function AZP.InterruptHelper:PutNamesInList()
             end
             if AZPInterruptHelperGUIDs[AZPInterruptHelperSettingsList[i]] ~= nil then
                 local temp = AZPInterruptHelperGUIDs[AZPInterruptHelperSettingsList[i]]
-                AZPInterruptOrderEditBoxes[i].editbox:SetText(temp)
+                --AZPInterruptOrderEditBoxes[i].editbox:SetText(temp)
                 AZPInterruptOrder[i][1] = AZPInterruptHelperSettingsList[i]
             end
         else
-            AZPInterruptOrderEditBoxes[i].editbox:SetText("")
+            --AZPInterruptOrderEditBoxes[i].editbox:SetText("")
         end
     end
 end
@@ -390,7 +415,7 @@ function AZP.InterruptHelper:ChangeFrameHeight()
     local countGUID = 0
     for i = 1, 10 do
         if AZPInterruptOrder[i] ~= nil then
-            if AZPInterruptOrder[i][1] ~= nil then countGUID = countGUID + 1 end
+            if AZPInterruptOrder[i][1] ~= nil and AZPInterruptOrder[i][1] ~= "" then countGUID = countGUID + 1 end
         end
     end
     AZPIHSelfFrame:SetHeight(countGUID * 20 + 50)
@@ -433,7 +458,7 @@ end
 function AZP.InterruptHelper:SaveInterrupts()
     local InterruptOrderText = ""
     for i = 1, 10 do
-        if AZPInterruptOrder[i][1] ~= nil then
+        if AZPInterruptOrder[i][1] ~= nil and AZPInterruptOrder[i][1] ~= "" then
             AZPInterruptOrder[i][2].name:SetText(AZPInterruptHelperGUIDs[AZPInterruptOrder[i][1]])
             local raidN = nil
             for j = 1, 40 do
@@ -606,7 +631,7 @@ function AZP.InterruptHelper:ReceiveInterrupters(interruptersString)
         end
     end
     for i = 1, #AZPInterruptOrder do
-        if AZPInterruptOrder[i][1] ~= nil then
+        if AZPInterruptOrder[i][1] ~= nil and AZPInterruptOrder[i][1] ~= "" then
             for j = 1, 40 do
                 if GetRaidRosterInfo(j) ~= nil then
                     local curName = GetRaidRosterInfo(j)           -- For party GetPartyMember(j) ~= nil but this excludes the player.
