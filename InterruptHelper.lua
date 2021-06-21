@@ -312,6 +312,7 @@ end
 
 function AZP.InterruptHelper.Events:PlayerLeaveCombat()
     cooldownTicker:Cancel()
+    AZP.InterruptHelper:SaveInterrupts()
 end
 
 function AZP.InterruptHelper:LoadSavedVars()
@@ -459,6 +460,7 @@ function AZP.InterruptHelper:SaveInterrupts()
     end
     AZPIHSelfFrame.text:SetText(InterruptOrderText)
 
+    -- Check if in encounter for next part...
     local playerGUID = UnitGUID("player")
     if AZPInterruptOrder[1] ~= nil then
         if AZPInterruptOrder[1][1] == playerGUID then
