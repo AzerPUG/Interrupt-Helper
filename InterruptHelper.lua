@@ -118,7 +118,7 @@ function AZP.InterruptHelper:FillOptionsPanel(frameToFill)
     frameToFill.LockMoveButton:SetSize(100, 25)
     frameToFill.LockMoveButton:SetPoint("TOP", 100, -100)
     frameToFill.LockMoveButton:SetText("Lock Interrupts")
-    frameToFill.LockMoveButton:SetScript("OnClick", function ()
+    frameToFill.LockMoveButton:SetScript("OnClick", function()
         if AZPIHSelfFrame:IsMovable() then
             AZPIHSelfFrame:EnableMouse(false)
             AZPIHSelfFrame:SetMovable(false)
