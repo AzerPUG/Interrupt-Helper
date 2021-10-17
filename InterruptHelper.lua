@@ -22,6 +22,8 @@ local soundChannel = 1
 local blinkingBoolean = false
 local blinkingTicker, cooldownTicker = nil, nil
 
+local PrePullOrder = {}
+
 local optionHeader = "|cFF00FFFFInterrupt Helper|r"
 
 function AZP.InterruptHelper:OnLoadBoth()
@@ -31,6 +33,7 @@ function AZP.InterruptHelper:OnLoadBoth()
     AZP.InterruptHelper:CreateMainFrame()
     AZP.InterruptHelper:CreatePopUpFrame()
     C_ChatInfo.RegisterAddonMessagePrefix("AZPSHAREINFO")
+    cooldownTicker = C_Timer.NewTicker(1, function() AZP.InterruptHelper:TickCoolDowns() end, 1000)
 end
 
 function AZP.InterruptHelper:OnLoadCore()
@@ -307,12 +310,20 @@ function AZP.InterruptHelper.Events:ChatMsgAddonVersion(...)
 end
 
 function AZP.InterruptHelper.Events:PlayerEnterCombat()
-    cooldownTicker = C_Timer.NewTicker(1, function() AZP.InterruptHelper:TickCoolDowns() end, 1000)
+    PrePullOrder = {}
+    for i = 1, #AZPInterruptOrder do
+        PrePullOrder[i] = AZPInterruptOrder[i]
+    end
 end
 
 function AZP.InterruptHelper.Events:PlayerLeaveCombat()
-    cooldownTicker:Cancel()
-    AZP.InterruptHelper:SaveInterrupts()
+    -- cooldownTicker:Cancel()
+    AZP.InterruptHelper:PutNamesInList()
+    AZP.InterruptHelper:SaveInterrupts(false)
+    for i = 1, #PrePullOrder do
+        AZPInterruptOrder[i] = PrePullOrder[i]
+        AZPInterruptOrder[i][2]:SetPoint("TOP", 0, -20 * i - 20)
+    end
 end
 
 function AZP.InterruptHelper:LoadSavedVars()
@@ -431,7 +442,7 @@ function AZP.InterruptHelper:GetClassColor(classIndex)
     end
 end
 
-function AZP.InterruptHelper:SaveInterrupts()
+function AZP.InterruptHelper:SaveInterrupts(leftCombat)
     local InterruptOrderText = ""
     for i = 1, 10 do
         if AZPInterruptOrder[i][1] ~= nil then
@@ -460,24 +471,26 @@ function AZP.InterruptHelper:SaveInterrupts()
     end
     AZPIHSelfFrame.text:SetText(InterruptOrderText)
 
-    -- Check if in encounter for next part...
-    local playerGUID = UnitGUID("player")
-    if AZPInterruptOrder[1] ~= nil then
-        if AZPInterruptOrder[1][1] == playerGUID then
-            curScale = 0.5
-            PopUpFrame.text:SetScale(curScale)
-            PopUpFrame.text:Show()
-            PlaySound(soundID, soundChannel)
-            C_Timer.NewTimer(2.5, function() PopUpFrame.text:Hide() end)
-            C_Timer.NewTicker(0.005,
-            function()
-                curScale = curScale + 0.15
+    if leftCombat ~= false then
+        -- Check if in encounter for next part...
+        local playerGUID = UnitGUID("player")
+        if AZPInterruptOrder[1] ~= nil then
+            if AZPInterruptOrder[1][1] == playerGUID then
+                curScale = 0.5
                 PopUpFrame.text:SetScale(curScale)
-            end,
-            35)
-            blinkingTicker = C_Timer.NewTicker(0.5, function() AZP.InterruptHelper:InterruptBlinking(blinkingBoolean) end, 10)
-        else
-            AZP.InterruptHelper:InterruptBlinking(false)
+                PopUpFrame.text:Show()
+                PlaySound(soundID, soundChannel)
+                C_Timer.NewTimer(2.5, function() PopUpFrame.text:Hide() end)
+                C_Timer.NewTicker(0.005,
+                function()
+                    curScale = curScale + 0.15
+                    PopUpFrame.text:SetScale(curScale)
+                end,
+                35)
+                blinkingTicker = C_Timer.NewTicker(0.5, function() AZP.InterruptHelper:InterruptBlinking(blinkingBoolean) end, 10)
+            else
+                AZP.InterruptHelper:InterruptBlinking(false)
+            end
         end
     end
 end
