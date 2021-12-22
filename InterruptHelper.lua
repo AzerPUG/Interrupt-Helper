@@ -448,6 +448,8 @@ function AZP.InterruptHelper:SaveInterrupts()
                 local _, _, classIndex = UnitClass(raidN)
                 if AZP.InterruptHelper:CheckIfDead(AZPInterruptOrder[i][1]) then
                     AZPInterruptOrder[i][2].name:SetTextColor(0.5, 0.5, 0.5)
+                    local skull = "\124TInterface\\TargetingFrame\\UI-RaidTargetingIcon_8.png:14\124t"
+                    AZPInterruptOrder[i][2].name:SetText(string.format("%s %s %s", skull, AZPInterruptOrder[i][2].name:GetText(), skull))
                 else
                     AZPInterruptOrder[i][2].name:SetTextColor(AZP.InterruptHelper:GetClassColor(classIndex))
                 end
