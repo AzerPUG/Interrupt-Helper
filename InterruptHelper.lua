@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 20
+AZP.VersionControl["Interrupt Helper"] = 21
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 if AZP.InterruptHelper.Events == nil then AZP.InterruptHelper.Events = {} end
 
