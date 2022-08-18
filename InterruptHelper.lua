@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 23
+AZP.VersionControl["Interrupt Helper"] = 24
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 if AZP.InterruptHelper.Events == nil then AZP.InterruptHelper.Events = {} end
 
@@ -255,15 +255,29 @@ function AZP.InterruptHelper:CreatePopUpFrame()
 end
 
 function AZP.InterruptHelper.Events:CombatLogEventUnfiltered(...)
-    local v1, combatEvent, v3, UnitGUID, casterName, v6, v7, destGUID, destName, v10, v11, spellID, v13, v14, v15 = CombatLogGetCurrentEventInfo()
-    -- v12 == SpellID, but not always, sometimes several IDs for one spell (when multiple things happen on one spell)
+    --[[
+
+            if "PLAYER" == Warlock then
+                if "PLAYER" == Demonology then
+                    local PlayerPetGUID = UnitGUID("PET")
+                    Send AddOn Channel Message, overwriting tracking UnitGUID for warlock, to the PlayerPetGUID.
+                end
+            end
+
+    ]]
+    local v1, combatEvent, v3, curGUID, casterName, v6, v7, destGUID, destName, v10, v11, spellID, v13, v14, v15 = CombatLogGetCurrentEventInfo()
     if combatEvent == "SPELL_CAST_SUCCESS" then
         local unitName = UnitFullName("PLAYER")
         if AZP.InterruptHelper.interruptSpells[spellID] ~= nil then
+            -- if spellID == 89766 then
+            --     print("Axe Toss Detected!")
+            --     print("UnitGUID:", curGUID)
+            --     print("PetGUID:", UnitGUID("PET"))
+            --     print("PlayerGUID:", UnitGUID("PLAYER"))
+            -- end
             for i = 1, #AZPInterruptOrder do
-                local potentialPetGUID = string.match(UnitGUID, "(.*)-")
-                if UnitGUID == AZPInterruptOrder[i][1] then
-                    AZP.InterruptHelper:StructureInterrupts(UnitGUID, spellID)
+                if curGUID == AZPInterruptOrder[i][1] then
+                    AZP.InterruptHelper:StructureInterrupts(curGUID, spellID)
                     break
                 end
             end
