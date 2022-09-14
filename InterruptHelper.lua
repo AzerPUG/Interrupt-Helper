@@ -218,6 +218,12 @@ function AZP.InterruptHelper:CreateMainFrame()
     IUAddonFrameCloseButton:SetPoint("TOPRIGHT", AZPIHSelfFrame, "TOPRIGHT", 2, 2)
     IUAddonFrameCloseButton:SetScript("OnClick", function() AZP.InterruptHelper:ShowHideFrame() end )
 
+    local IUAddonFrameClearButton = CreateFrame("Button", nil, AZPIHSelfFrame, "UIPanelButtonTemplate")
+    IUAddonFrameClearButton:SetSize(30, 15)
+    IUAddonFrameClearButton:SetPoint("TOPLEFT", 0, 0)
+    IUAddonFrameClearButton:SetText("Clear")
+    IUAddonFrameClearButton:SetScript("OnClick", function() AZP.InterruptHelper:ClearInterrupts() end )
+
     for i = 1, 10 do
         AZPInterruptOrder[i][2] = CreateFrame("StatusBar", nil, AZPIHSelfFrame)
         AZPInterruptOrder[i][2]:SetSize(AZPIHSelfFrame:GetWidth() - 20, 18)
@@ -252,6 +258,16 @@ function AZP.InterruptHelper:CreatePopUpFrame()
     PopUpFrame.text:SetText("|cFFFF0000INTERRUPT NEXT!|r")
     PopUpFrame.text:SetScale(0.5)
     PopUpFrame.text:Hide()
+end
+
+function AZP.InterruptHelper:ClearInterrupts()
+    for _, v in pairs(AZPInterruptOrder) do
+        v[1] = nil
+        v[2]:Hide()
+    end
+    AZP.InterruptHelper:SaveInterrupts()
+    AZP.InterruptHelper:ChangeFrameHeight()
+    AZPInterruptHelperSettingsList = nil
 end
 
 function AZP.InterruptHelper.Events:CombatLogEventUnfiltered(...)
