@@ -1,9 +1,8 @@
-## Interface: 100000
+## Interface: 100005
 ## Title: |cFF00FFFFAzerPUG's|r |cFFFF00FFInterrupt Helper|r
 ## Author: Tex & AzerPUG Gaming Community (www.azerpug.com/discord)
 ## OptionalDeps: AzerPUGsCore
 ## Notes: AzerPUG's Interrupt Helper.
-## Version: SL 9.2.5
 ## SavedVariables: AZPInterruptHelperLocation, AZPInterruptHelperSettingsList, AZPIHShownLocked
 
 dataTables.lua

@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["Interrupt Helper"] = 25
+AZP.VersionControl["Interrupt Helper"] = 26
 if AZP.InterruptHelper == nil then AZP.InterruptHelper = {} end
 if AZP.InterruptHelper.Events == nil then AZP.InterruptHelper.Events = {} end
 
@@ -706,7 +706,7 @@ function AZP.InterruptHelper:GetSpecificAddonVersion(versionString, addonWanted)
     end
 end
 
-function AZP.InterruptHelper:OnEvent(self, event, ...)
+function AZP.InterruptHelper:OnEvent(_, event, ...)
     if event == "COMBAT_LOG_EVENT_UNFILTERED" then
         AZP.InterruptHelper.Events:CombatLogEventUnfiltered(...)
     elseif event == "VARIABLES_LOADED" then
